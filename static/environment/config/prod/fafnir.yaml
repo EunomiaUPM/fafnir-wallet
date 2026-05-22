@@ -1,0 +1,18 @@
+# ==========================
+# COMMON ANCHORS
+# ==========================
+http_host: &http_host
+  protocol: 'https'
+  url: 'fafnir.your_domain'
+  port: null
+  internal_port: '7001'
+
+# ==========================
+# CONFIG
+# ==========================
+hosts:
+  http: *http_host
+  grpc: null
+  graphql: null
+
+path: '/var/lib/fafnir/data'

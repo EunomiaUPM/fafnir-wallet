@@ -1,0 +1,19 @@
+# ==========================
+# COMMON ANCHORS
+# ==========================
+http_host: &http_host
+  protocol: 'http'
+  url: '127.0.0.1'
+  port: '7001'
+  internal_port: null
+
+# ==========================
+# CONFIG
+# ==========================
+
+hosts:
+  http: *http_host
+  grpc: null
+  graphql: null
+
+path: './data'

@@ -1,0 +1,18 @@
+# rustfmt configuration — stable toolchain compatible
+# Run:   cargo fmt
+# Check: cargo fmt --check
+
+edition = "2024"
+
+# ── width ─────────────────────────────────────────────────────────────────────
+max_width            = 100
+tab_spaces           = 4
+hard_tabs            = false
+use_small_heuristics = "Default"
+
+# ── line endings ──────────────────────────────────────────────────────────────
+newline_style = "Unix"
+
+# ── imports ───────────────────────────────────────────────────────────────────
+reorder_imports = true
+reorder_modules = true
