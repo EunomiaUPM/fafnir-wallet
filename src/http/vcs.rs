@@ -30,11 +30,6 @@ pub struct VcsRouter {
     core: Arc<dyn CoreVcsTrait>,
 }
 
-#[derive(Debug, Deserialize)]
-struct FormatFilter {
-    format: Option<String>,
-}
-
 impl VcsRouter {
     pub fn new(core: Arc<dyn CoreVcsTrait>) -> Self {
         Self { core }

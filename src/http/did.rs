@@ -62,8 +62,8 @@ impl DidRouter {
     async fn create(
         State(core): State<Arc<dyn CoreDidsTrait>>,
         Json(entry): Json<DidEntryReq>,
-    ) -> AppResult<Json<DidEntry>> {
-        Ok(Json(core.create(entry).await?))
+    ) -> AppResult<(StatusCode, Json<DidEntry>)> {
+        Ok((StatusCode::CREATED, Json(core.create(entry).await?)))
     }
 
     async fn delete(

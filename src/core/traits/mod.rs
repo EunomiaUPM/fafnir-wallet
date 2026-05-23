@@ -19,6 +19,7 @@ mod core;
 mod core_dids;
 mod core_keys;
 mod core_vcs;
+mod core_oid4vc;
 
 pub use core::CoreTrait;
 pub use core_dids::CoreDidsTrait;

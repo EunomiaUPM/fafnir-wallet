@@ -20,6 +20,7 @@ use async_trait::async_trait;
 use std::path::{Path, PathBuf};
 use uuid::Uuid;
 use ymir::errors::{Errors, Outcome};
+use ymir::types::keys::{Crv, KeyData, Kty};
 use ymir::types::wallet::fafnir::{KeyEntry, KeyEntryReq};
 
 pub struct KeysOnDisk {
@@ -46,6 +47,8 @@ impl BasicRepoTrait<KeyEntry, KeyEntryReq> for KeysOnDisk {
     }
 
     async fn build_entry(&self, req: KeyEntryReq) -> Outcome<KeyEntry> {
+        validate_key_pem(&req.kty, req.crv.as_ref(), &req.pem)?;
+
         let key = KeyEntry {
             id: Uuid::new_v4().to_string(),
             alias: req.alias,
@@ -59,3 +62,26 @@ impl BasicRepoTrait<KeyEntry, KeyEntryReq> for KeysOnDisk {
 }
 
 impl KeysTrait for KeysOnDisk {}
+
+/// Valida que el PEM se pueda parsear según el `(kty, crv)` declarado,
+/// usando los mismos parsers que `TryInto<Key>` para `KeyEntry`.
+/// Se invoca al guardar para no aceptar PEMs basura que luego revientan
+/// al construir un DID.
+fn validate_key_pem(kty: &Kty, crv: Option<&Crv>, pem: &str) -> Outcome<()> {
+    match (kty, crv) {
+        (Kty::Okp, Some(Crv::Ed25519)) => {
+            KeyData::build_ed25519(pem)?;
+        }
+        (Kty::Rsa, _) => {
+            KeyData::build_rsa(pem)?;
+        }
+        _ => {
+            let crv_str = crv.map(|c| c.to_string()).unwrap_or_default();
+            return Err(Errors::not_impl(
+                format!("unsupported JWK: kty={} crv={:?}", kty, crv_str),
+                None,
+            ));
+        }
+    }
+    Ok(())
+}

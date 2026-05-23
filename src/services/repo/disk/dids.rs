@@ -49,7 +49,7 @@ impl BasicRepoTrait<DidEntry, PreDidEntry> for DidsOnDisk {
     }
 
     async fn build_entry(&self, req: PreDidEntry) -> Outcome<DidEntry> {
-        let did = Did::create(req.r#type)?;
+        let did = Did::create(req.r#type, &req.keys)?;
         let did_document = DidDocument::base(&did, &req.keys);
 
         let did = DidEntry {

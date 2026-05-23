@@ -56,8 +56,8 @@ impl KeyRouter {
     async fn create(
         State(core): State<Arc<dyn CoreKeysTrait>>,
         Json(entry): Json<KeyEntryReq>,
-    ) -> AppResult<Json<KeyEntry>> {
-        Ok(Json(core.create(entry).await?))
+    ) -> AppResult<(StatusCode, Json<KeyEntry>)> {
+        Ok((StatusCode::CREATED, Json(core.create(entry).await?)))
     }
 
     async fn delete(

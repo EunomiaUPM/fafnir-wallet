@@ -20,7 +20,7 @@ use async_trait::async_trait;
 use std::path::{Path, PathBuf};
 use ymir::errors::{Errors, Outcome};
 use ymir::types::jwt::Jwt;
-use ymir::types::wallet::fafnir::{VCType, VcEntry, VcEntryReq};
+use ymir::types::wallet::fafnir::{VcBodyType, VcEntry, VcEntryReq};
 
 pub struct VcsOnDisk {
     dir: PathBuf,
@@ -47,11 +47,11 @@ impl BasicRepoTrait<VcEntry, VcEntryReq> for VcsOnDisk {
 
     async fn build_entry(&self, req: VcEntryReq) -> Outcome<VcEntry> {
         let doc = match &req.r#type {
-            VCType::Jwt(jwt) => {
+            VcBodyType::Jwt(jwt) => {
                 let jwt = Jwt::parse(jwt)?;
                 jwt.claims()?
             }
-            VCType::Value(doc) => doc.to_owned(),
+            VcBodyType::Value(doc) => doc.to_owned(),
         };
 
         Ok(VcEntry {

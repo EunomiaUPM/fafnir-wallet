@@ -43,7 +43,7 @@ pub trait CoreDidsTrait: Send + Sync + 'static {
                 .map(|key_id| async move { self.repo().keys().get_by_id(key_id).await }),
         )
         .await?;
-
+        
         let keys = keys_entry
             .into_par_iter()
             .map(|key| key.try_into())
