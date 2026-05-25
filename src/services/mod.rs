@@ -15,5 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+pub mod http;
+pub mod oid4vci;
+pub mod oid4vp;
 pub mod repo;
-mod oid4vp;

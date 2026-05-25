@@ -15,6 +15,9 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::core::traits::{CoreDidsTrait, CoreKeysTrait, CoreVcsTrait};
+use crate::core::traits::{CoreDidsTrait, CoreKeysTrait, CoreOid4vcTrait, CoreVcsTrait};
 
-pub trait CoreTrait: CoreKeysTrait + CoreDidsTrait + CoreVcsTrait + Send + Sync + 'static {}
+pub trait CoreTrait:
+    CoreKeysTrait + CoreDidsTrait + CoreVcsTrait + CoreOid4vcTrait + Send + Sync + 'static
+{
+}

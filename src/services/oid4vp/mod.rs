@@ -14,4 +14,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
+
+mod oid4vp_trait;
 mod service;
+
+pub use oid4vp_trait::Oid4vpTrait;
+pub use service::Oid4vpService;

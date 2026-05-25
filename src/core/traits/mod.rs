@@ -18,10 +18,11 @@
 mod core;
 mod core_dids;
 mod core_keys;
-mod core_vcs;
 mod core_oid4vc;
+mod core_vcs;
 
 pub use core::CoreTrait;
 pub use core_dids::CoreDidsTrait;
 pub use core_keys::CoreKeysTrait;
+pub use core_oid4vc::CoreOid4vcTrait;
 pub use core_vcs::CoreVcsTrait;

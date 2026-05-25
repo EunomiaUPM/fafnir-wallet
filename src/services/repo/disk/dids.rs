@@ -50,7 +50,10 @@ impl BasicRepoTrait<DidEntry, PreDidEntry> for DidsOnDisk {
 
     async fn build_entry(&self, req: PreDidEntry) -> Outcome<DidEntry> {
         let did = Did::create(req.r#type, &req.keys)?;
-        let did_document = DidDocument::base(&did, &req.keys);
+        let mut did_document = DidDocument::base(&did, &req.keys);
+        if let Some(services) = req.service {
+            did_document = did_document.add_services(services);
+        }
 
         let did = DidEntry {
             id: Uuid::new_v4().to_string(),

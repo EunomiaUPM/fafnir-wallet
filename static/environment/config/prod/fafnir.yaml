@@ -2,8 +2,8 @@
 # COMMON ANCHORS
 # ==========================
 http_host: &http_host
-  protocol: 'https'
-  url: 'fafnir.your_domain'
+  protocol: 'http'
+  url: 'fafnir-wallet'
   port: null
   internal_port: '7001'
 
@@ -15,4 +15,12 @@ hosts:
   grpc: null
   graphql: null
 
-path: '/var/lib/fafnir/data'
+# Persistencia de keys/dids/vcs. La imagen corre como `appuser` (UID
+# 10001) con WORKDIR `/app`; este path queda dentro de su propiedad.
+# Monta un volumen en `/app/data` para que sobreviva al reinicio.
+path: '/app/data'
+
+# Reescritura 127.0.0.1 / localhost → host.docker.internal. Ponlo a true
+# si la wallet corre dentro de un contenedor que necesita acceder a
+# servicios del host.
+docker: true

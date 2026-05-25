@@ -14,7 +14,9 @@ axum = "0.8.8"
 tokio = { version = "1.35.0", features = ["full"] }
 #tower = "0.5"
 tower-http = { version = "0.6", features = ["trace", "cors"] }
-#reqwest = { version = "0.12", default-features = false, features = ["json"] }
+# Mismas features que en ymir/Cargo.toml para que cargo unifique la
+# misma versión y `reqwest::Response` sea el mismo tipo en ambos crates.
+reqwest = { version = "0.13.3", default-features = false, features = ["json", "rustls"] }
 #
 ## Serialisation
 serde = { version = "1.0", features = ["derive"] }
@@ -37,12 +39,12 @@ json_to_table = "0.12.0"
 #urlencoding = "2.1"
 #
 ## Util
-#chrono = { version = "0.4", features = ["serde"] }
+chrono = { version = "0.4", features = ["serde"] }
 #uuid = { version = "1", features = ["v4", "serde"] }
 #thiserror = "2"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-#url = "2"
+url = "2"
 clap = { version = "4.4.9", features = [
     "env",
     "derive",
@@ -50,8 +52,8 @@ clap = { version = "4.4.9", features = [
     "unicode",
 ] }
 
-#ymir = {git = "https://github.com/EunomiaUPM/ymir.git", tag = "v0.7.1"}
-ymir = { path = "./../ymir" }
+ymir = {git = "https://github.com/EunomiaUPM/ymir.git", tag = "test"}
+#ymir = { path = "./../ymir" }
 async-trait = "0.1.89"
 serde_norway = "0.9.42"
 uuid = { version = "1.23.1", features = ["v4"] }

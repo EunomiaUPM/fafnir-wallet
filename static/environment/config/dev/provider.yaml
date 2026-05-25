@@ -1,0 +1,24 @@
+# ==========================
+# COMMON ANCHORS
+# ==========================
+http_host: &http_host
+  protocol: 'http'
+  url: '127.0.0.1'
+  port: '7002'
+  internal_port: null
+
+# ==========================
+# CONFIG
+# ==========================
+
+hosts:
+  http: *http_host
+  grpc: null
+  graphql: null
+
+path: './data/provider'
+
+# Si la wallet corre dentro de un contenedor Docker, pon a true para que
+# las URLs externas (issuer/verifier) con host 127.0.0.1 o localhost se
+# reescriban a host.docker.internal antes de hacer la petición.
+docker: false

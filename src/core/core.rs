@@ -17,16 +17,28 @@
 
 use std::sync::Arc;
 
-use crate::core::traits::{CoreDidsTrait, CoreKeysTrait, CoreTrait, CoreVcsTrait};
+use crate::core::traits::{CoreDidsTrait, CoreKeysTrait, CoreOid4vcTrait, CoreTrait, CoreVcsTrait};
+use crate::services::oid4vci::Oid4vciTrait;
+use crate::services::oid4vp::Oid4vpTrait;
 use crate::services::repo::RepoTrait;
 
 pub struct Core {
     repo: Arc<dyn RepoTrait>,
+    oid4vci: Arc<dyn Oid4vciTrait>,
+    oid4vp: Arc<dyn Oid4vpTrait>,
 }
 
 impl Core {
-    pub fn new(repo: Arc<dyn RepoTrait>) -> Self {
-        Self { repo }
+    pub fn new(
+        repo: Arc<dyn RepoTrait>,
+        oid4vci: Arc<dyn Oid4vciTrait>,
+        oid4vp: Arc<dyn Oid4vpTrait>,
+    ) -> Self {
+        Self {
+            repo,
+            oid4vci,
+            oid4vp,
+        }
     }
 }
 
@@ -45,6 +57,20 @@ impl CoreDidsTrait for Core {
 impl CoreVcsTrait for Core {
     fn repo(&self) -> Arc<dyn RepoTrait> {
         self.repo.clone()
+    }
+}
+
+impl CoreOid4vcTrait for Core {
+    fn repo(&self) -> Arc<dyn RepoTrait> {
+        self.repo.clone()
+    }
+
+    fn oid4vci(&self) -> Arc<dyn Oid4vciTrait> {
+        self.oid4vci.clone()
+    }
+
+    fn oid4vp(&self) -> Arc<dyn Oid4vpTrait> {
+        self.oid4vp.clone()
     }
 }
 

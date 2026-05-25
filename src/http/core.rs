@@ -26,8 +26,8 @@ use tower_http::trace::{DefaultOnResponse, TraceLayer};
 use tracing::{Level, error, info};
 
 use crate::core::Core;
-use crate::core::traits::{CoreDidsTrait, CoreKeysTrait, CoreVcsTrait};
-use crate::http::{DidRouter, KeyRouter, VcsRouter};
+use crate::core::traits::{CoreDidsTrait, CoreKeysTrait, CoreOid4vcTrait, CoreVcsTrait};
+use crate::http::{DidRouter, KeyRouter, Oid4vcRouter, VcsRouter};
 
 pub struct WalletRouter {
     core: Arc<Core>,
@@ -42,15 +42,18 @@ impl WalletRouter {
         let dids_core: Arc<dyn CoreDidsTrait> = self.core.clone();
         let keys_core: Arc<dyn CoreKeysTrait> = self.core.clone();
         let vcs_core: Arc<dyn CoreVcsTrait> = self.core.clone();
+        let oid4vc_core: Arc<dyn CoreOid4vcTrait> = self.core.clone();
 
         let dids = DidRouter::new(dids_core).router();
         let keys = KeyRouter::new(keys_core).router();
         let vcs = VcsRouter::new(vcs_core).router();
+        let oid4vc = Oid4vcRouter::new(oid4vc_core).router();
 
         Router::new()
             .nest("/dids", dids)
             .nest("/keys", keys)
             .nest("/vcs", vcs)
+            .merge(oid4vc)
             .fallback(Self::fallback)
             .layer(
                 TraceLayer::new_for_http()

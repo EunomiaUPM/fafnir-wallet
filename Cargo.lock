@@ -871,10 +871,12 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "axum",
+ "chrono",
  "clap",
  "futures",
  "json_to_table",
  "rayon",
+ "reqwest 0.13.3",
  "serde",
  "serde_json",
  "serde_norway",
@@ -882,6 +884,7 @@ dependencies = [
  "tower-http",
  "tracing",
  "tracing-subscriber",
+ "url",
  "uuid",
  "ymir",
 ]
@@ -4485,6 +4488,7 @@ checksum = "cfe53a6657fd280eaa890a3bc59152892ffa3e30101319d168b781ed6529b049"
 [[package]]
 name = "ymir"
 version = "0.7.0"
+source = "git+https://github.com/EunomiaUPM/ymir.git?tag=test#d06abb2c37c92468214f24e8ee64ff6e4feb81af"
 dependencies = [
  "async-trait",
  "axum",

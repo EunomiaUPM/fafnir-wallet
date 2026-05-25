@@ -17,3 +17,8 @@ hosts:
   graphql: null
 
 path: './data'
+
+# Si la wallet corre dentro de un contenedor Docker, pon a true para que
+# las URLs externas (issuer/verifier) con host 127.0.0.1 o localhost se
+# reescriban a host.docker.internal antes de hacer la petición.
+docker: false

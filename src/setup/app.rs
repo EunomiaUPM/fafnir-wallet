@@ -31,7 +31,7 @@ pub struct FafnirWallet;
 
 impl FafnirWallet {
     pub async fn create_router(config: &CoreWalletConfig) -> Router {
-        let core = CoreBuilder::from_data_dir(config.path())
+        let core = CoreBuilder::from_data_dir(config.path(), config.is_docker())
             .await
             .expect("Error creating Wallet Router");
 

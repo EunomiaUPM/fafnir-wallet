@@ -28,6 +28,12 @@ use ymir::utils::read;
 pub struct CoreWalletConfig {
     hosts: CommonHostsConfig,
     path: PathBuf,
+    /// Si `true`, las URLs externas (issuer/verifier) con host
+    /// `127.0.0.1` o `localhost` se reescriben a `host.docker.internal`
+    /// antes de hacer la petición HTTP. Útil cuando la wallet corre
+    /// dentro de un contenedor Docker.
+    #[serde(default)]
+    docker: bool,
 }
 
 impl CoreWalletConfig {
@@ -50,5 +56,11 @@ impl HostsConfigTrait for CoreWalletConfig {
 impl CoreWalletConfig {
     pub fn path(&self) -> &PathBuf {
         &self.path
+    }
+
+    /// `true` si la wallet debe reescribir `127.0.0.1` / `localhost`
+    /// → `host.docker.internal` en las URLs externas.
+    pub fn is_docker(&self) -> bool {
+        self.docker
     }
 }

@@ -18,9 +18,11 @@
 mod core;
 mod did;
 mod key;
+mod oid4vc;
 mod vcs;
 
 pub use core::WalletRouter;
 pub use did::DidRouter;
 pub use key::KeyRouter;
+pub use oid4vc::Oid4vcRouter;
 pub use vcs::VcsRouter;
