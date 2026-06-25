@@ -16,32 +16,22 @@
  */
 
 use async_trait::async_trait;
+use ymir::capabilities::Did;
+use ymir::data::entities::wallet::vc;
 use ymir::errors::Outcome;
 use ymir::types::vcs::VPDef;
-use ymir::types::wallet::fafnir::{DidEntry, KeyEntry, VcEntry};
+use ymir::types::wallet::KeyRef;
 
-/// Operaciones atómicas del lado holder en OID4VP.
-///
-/// Este service NO toca el repo. Las VCs y el holder (did/key) llegan
-/// ya cargados desde el `CoreOid4vcTrait`. `KeyEntry` se mueve porque
-/// el service necesita convertirlo en `Key` para firmar.
 #[async_trait]
 pub trait Oid4vpTrait: Send + Sync + 'static {
-    /// Parsear/fetch de la presentation-request URI → `VPDef`.
     async fn resolve_request(&self, uri: &str) -> Outcome<VPDef>;
 
-    /// Matching local: dadas las VCs disponibles del repo, devolver
-    /// los ids que satisfacen cada input_descriptor de la VPDef.
-    fn match_vcs(&self, vpd: &VPDef, available_vcs: &[VcEntry]) -> Outcome<Vec<String>>;
-
-    /// Construir VP firmada y enviarla al verifier.
-    /// Devuelve la `redirect_uri` si el verifier la incluye.
     async fn present(
         &self,
         uri: &str,
         vpd: &VPDef,
-        selected_vcs: &[VcEntry],
-        holder_did: &DidEntry,
-        holder_key: KeyEntry,
+        selected_vcs: &[vc::Model],
+        holder_did: &Did,
+        holder_key: &KeyRef,
     ) -> Outcome<Option<String>>;
 }

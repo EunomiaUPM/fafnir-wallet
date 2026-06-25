@@ -17,10 +17,10 @@
 
 use std::sync::Arc;
 
-use crate::services::repo::subtraits::{DidsTrait, KeysTrait, VcsTrait};
+use ymir::services::repo::traits::wallet::{DidRepoTrait, KeyRepoTrait, VcRepoTrait};
 
 pub trait RepoTrait: Send + Sync + 'static {
-    fn dids(&self) -> Arc<dyn DidsTrait>;
-    fn keys(&self) -> Arc<dyn KeysTrait>;
-    fn vcs(&self) -> Arc<dyn VcsTrait>;
+    fn dids(&self) -> Arc<dyn DidRepoTrait>;
+    fn keys(&self) -> Arc<dyn KeyRepoTrait>;
+    fn vcs(&self) -> Arc<dyn VcRepoTrait>;
 }

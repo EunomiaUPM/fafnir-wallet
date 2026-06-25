@@ -17,7 +17,10 @@
 
 pub mod config;
 pub mod core;
+pub mod data;
 pub mod http;
+pub mod modules;
 pub mod services;
 pub mod setup;
 pub mod types;
+pub mod utils;

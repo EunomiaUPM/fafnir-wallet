@@ -15,9 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-mod builder;
 mod core;
-pub mod traits;
+mod orchestator;
 
-pub use builder::CoreBuilder;
-pub use core::Core;
+pub use core::CoreWallet;
+pub use orchestator::OrchestratorTrait;

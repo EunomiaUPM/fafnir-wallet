@@ -1,0 +1,57 @@
+/*
+ * Copyright (C) 2026 - Universidad Politécnica de Madrid - UPM
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+use reqwest::Response;
+use serde::de::DeserializeOwned;
+use ymir::errors::{Errors, Outcome, PetitionFailure};
+use ymir::utils::ResponseExt;
+
+pub fn normalize_host(host: impl Into<String>, is_docker: bool) -> String {
+    let host = host.into();
+    if is_docker {
+        if host.contains("localhost") || host.contains("127.0.0.1") {
+            host.replace("localhost", "host.docker.internal")
+                .replace("127.0.0.1", "host.docker.internal")
+        } else {
+            host.to_string()
+        }
+    } else {
+        if host.contains("host.docker.internal") {
+            host.replace("host.docker.internal", "localhost")
+        } else {
+            host.to_string()
+        }
+    }
+}
+
+pub async fn parse_or_fail<T: DeserializeOwned>(
+    res: Response,
+    url: &str,
+    method: &str,
+) -> Outcome<T> {
+    if res.status().is_success() {
+        res.parse_json().await
+    } else {
+        Err(Errors::petition(
+            url,
+            method,
+            Some(res.status()),
+            PetitionFailure::HttpStatus(res.status()),
+            "unexpected http status",
+            None,
+        ))
+    }
+}

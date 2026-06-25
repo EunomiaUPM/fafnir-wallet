@@ -15,12 +15,9 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use super::BasicRepoTrait;
-use async_trait::async_trait;
-use ymir::types::wallet::fafnir::{KeyEntry, KeyEntryReq};
+use crate::modules::{DidManagerModule, KeyManagerModule, Oid4VcModule, VcManagerModule};
 
-/// No hay métodos extra de momento — el CRUD genérico cubre lo que necesitamos
-/// con las keys. Si más adelante necesitás (p.ej.) buscar por alias o por
-/// algoritmo, añadílos aquí.
-#[async_trait]
-pub trait KeysTrait: BasicRepoTrait<KeyEntry, KeyEntryReq> {}
+pub trait CoreTrait:
+    KeyManagerModule + DidManagerModule + VcManagerModule + Oid4VcModule + Send + Sync + 'static
+{
+}

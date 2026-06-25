@@ -15,16 +15,24 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::cmp::PartialEq;
-
 use crate::config::CoreWalletConfig;
 use crate::setup::app::FafnirWallet;
+use crate::setup::db_migrations::WalletMigration;
 use clap::{Parser, Subcommand};
+use serde_json::Value;
+use std::cmp::PartialEq;
+use std::collections::HashMap;
+use std::path::PathBuf;
+use std::sync::Arc;
 use tracing::debug;
-use ymir::errors::Outcome;
+use ymir::errors::{Errors, Outcome};
+use ymir::services::vault::fake_vault::FakeVaultService;
+use ymir::services::vault::vault_rs::RealVaultService;
+use ymir::services::vault::{VaultService, VaultTrait};
+use ymir::utils::{expect_from_env, read_json};
 
 #[derive(Parser, Debug)]
-#[command(name = "Rainbow Dataspace Authority Server")]
+#[command(name = "Fafnir Wallet")]
 #[command(version = "0.1")]
 struct WalletCli {
     #[command(subcommand)]
@@ -40,7 +48,7 @@ pub struct WalletCliArgs {
 #[derive(Subcommand, Debug, PartialEq)]
 pub enum WalletCliCommands {
     Start(WalletCliArgs),
-    // Setup(WalletCliArgs),
+    Setup(WalletCliArgs),
 }
 
 pub struct WalletCommands;
@@ -53,33 +61,38 @@ impl WalletCommands {
         match cli.command {
             WalletCliCommands::Start(args) => {
                 let config = CoreWalletConfig::load(args.env_file)?;
-                // let (config, vault) = Self::bootstrap(args)?;
-                FafnirWallet::run(&config).await?
-            } // WalletCliCommands::Setup(args) => {
-              //     let (config, vault) = Self::bootstrap(args)?;
-              //     match config.is_prod() {
-              //         true => vault.write_all_secrets(None).await?,
-              //         false => vault.write_local_secrets(None).await?,
-              //     }
-              //     let db_connection = vault.get_db_connection(&config).await;
-              //     AuthorityMigration::run(&db_connection).await?;
-              // }
-        }
+                let vault = if config.is_vault_real() {
+                    Arc::new(VaultService::Real(RealVaultService::new()?))
+                } else {
+                    Arc::new(VaultService::Fake(FakeVaultService::new()?))
+                };
+                FafnirWallet::run(config, vault).await?
+            }
+            WalletCliCommands::Setup(args) => {
+                let config = CoreWalletConfig::load(args.env_file)?;
+                let vault = if config.is_vault_real() {
+                    Arc::new(VaultService::Real(RealVaultService::new()?))
+                } else {
+                    Arc::new(VaultService::Fake(FakeVaultService::new()?))
+                };
 
+                let mut mapa = HashMap::new();
+                let vault_path =
+                    PathBuf::from(std::env::var("VAULT_PATH").map_err(|e| {
+                        Errors::vault("VAULT_PATH env var not set", Some(Box::new(e)))
+                    })?);
+
+                let secret_path = vault_path.join("secrets");
+
+                let vault_path = expect_from_env("VAULT_APP_DB");
+                let db_json: Value = read_json(secret_path.join("db.json"))?;
+                mapa.insert(vault_path, db_json);
+
+                vault.write_all_secrets(Some(mapa)).await?;
+                let db_connection = vault.get_db_connection(&config).await?;
+                WalletMigration::run(&db_connection).await?;
+            }
+        }
         Ok(())
     }
-
-    // fn bootstrap(args: WalletCliArgs) -> Outcome<(CoreApplicationConfig, VaultService)> {
-    //     let config = CoreApplicationConfig::load(args.env_file)?;
-    //     let vault = if config.is_vault_real() {
-    //         VaultService::Real(RealVaultService::new())
-    //     } else {
-    //         VaultService::Fake(FakeVaultService::new())
-    //     };
-    //     let table = json_to_table::json_to_table(&serde_json::to_value(&config)?)
-    //         .collapse()
-    //         .to_string();
-    //     info!("Current Fafnir Config Config:\n{}", table);
-    //     Ok((config, vault))
-    // }
 }

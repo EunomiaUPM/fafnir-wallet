@@ -15,7 +15,6 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use fafnir_wallet::setup::app::FafnirWallet;
 use fafnir_wallet::setup::cmd::WalletCommands;
 use tracing::info;
 use tracing_subscriber::EnvFilter;

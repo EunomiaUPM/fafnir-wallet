@@ -18,30 +18,52 @@
 use std::sync::Arc;
 
 use crate::config::CoreWalletConfig;
-use crate::core::CoreBuilder;
+use crate::core::CoreWallet;
 use crate::http::WalletRouter;
+use crate::services::oid4vci::Oid4vciService;
+use crate::services::oid4vp::Oid4vpService;
+use crate::services::repo::{RepoTrait, WalletRepo};
 use axum::{Router, serve};
 use tokio::net::TcpListener;
 use tracing::info;
 use ymir::config::traits::HostsConfigTrait;
 use ymir::config::types::HostType;
 use ymir::errors::{Errors, Outcome};
+use ymir::services::identity::{IdentityManager, IdentityTrait};
+use ymir::services::vault::{VaultService, VaultTrait};
 
 pub struct FafnirWallet;
 
 impl FafnirWallet {
-    pub async fn create_router(config: &CoreWalletConfig) -> Router {
-        let core = CoreBuilder::from_data_dir(config.path(), config.is_docker())
-            .await
-            .expect("Error creating Wallet Router");
+    pub async fn create_router(
+        config: CoreWalletConfig,
+        vault: Arc<VaultService>,
+    ) -> Outcome<Router> {
+        let db_connection = vault.get_db_connection(&config).await?;
+        let repo: Arc<dyn RepoTrait> = Arc::new(WalletRepo::new(db_connection));
 
-        WalletRouter::new(Arc::new(core)).router()
+        let identity_manager = match repo.dids().get_default().await {
+            Ok(model) => Arc::new(IdentityManager::load(&model)?),
+            Err(_) => Arc::new(IdentityManager::new()),
+        };
+
+        let oid4vci = Arc::new(Oid4vciService::new(
+            identity_manager.get_identity(),
+            vault.clone(),
+            config.is_docker(),
+        ));
+        let oid4vp = Arc::new(Oid4vpService::new(vault.clone(), config.is_docker()));
+
+        let core = CoreWallet::new(identity_manager, repo, oid4vci, oid4vp, vault, config);
+        let router = WalletRouter::new(Arc::new(core));
+        Ok(router.router())
     }
 
-    pub async fn run(config: &CoreWalletConfig) -> Outcome<()> {
-        let router = Self::create_router(config).await;
-
+    pub async fn run(config: CoreWalletConfig, vault: Arc<VaultService>) -> Outcome<()> {
         let port = config.get_internal_port(HostType::Http);
+
+        let router = Self::create_router(config, vault.clone()).await?;
+
         let server_message = format!("Starting Fafnir Wallet in {}", port);
         info!("{}", server_message);
 

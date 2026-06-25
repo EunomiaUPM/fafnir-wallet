@@ -15,63 +15,87 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::sync::Arc;
-
-use crate::core::traits::{CoreDidsTrait, CoreKeysTrait, CoreOid4vcTrait, CoreTrait, CoreVcsTrait};
+use super::OrchestratorTrait;
+use crate::config::CoreWalletConfig;
+use crate::modules::{DidManagerModule, KeyManagerModule, Oid4VcModule, VcManagerModule};
 use crate::services::oid4vci::Oid4vciTrait;
 use crate::services::oid4vp::Oid4vpTrait;
 use crate::services::repo::RepoTrait;
+use crate::services::{HasOid4Vci, HasOid4Vp, HasRepo};
+use std::sync::Arc;
+use ymir::services::identity::{IdentityManager, IdentityTrait};
+use ymir::services::vault::VaultService;
+use ymir::services::{HasIdentity, HasVault};
 
-pub struct Core {
+pub struct CoreWallet {
+    identity: Arc<IdentityManager>,
     repo: Arc<dyn RepoTrait>,
     oid4vci: Arc<dyn Oid4vciTrait>,
     oid4vp: Arc<dyn Oid4vpTrait>,
+    vault: Arc<VaultService>,
+    config: CoreWalletConfig,
 }
 
-impl Core {
+impl CoreWallet {
     pub fn new(
+        identity: Arc<IdentityManager>,
         repo: Arc<dyn RepoTrait>,
         oid4vci: Arc<dyn Oid4vciTrait>,
         oid4vp: Arc<dyn Oid4vpTrait>,
+        vault: Arc<VaultService>,
+        config: CoreWalletConfig,
     ) -> Self {
         Self {
+            identity,
             repo,
             oid4vci,
             oid4vp,
+            vault,
+            config,
         }
     }
 }
 
-impl CoreKeysTrait for Core {
+impl HasVault for CoreWallet {
+    fn vault(&self) -> Arc<VaultService> {
+        self.vault.clone()
+    }
+}
+
+impl HasRepo for CoreWallet {
     fn repo(&self) -> Arc<dyn RepoTrait> {
         self.repo.clone()
     }
 }
 
-impl CoreDidsTrait for Core {
-    fn repo(&self) -> Arc<dyn RepoTrait> {
-        self.repo.clone()
-    }
-}
-
-impl CoreVcsTrait for Core {
-    fn repo(&self) -> Arc<dyn RepoTrait> {
-        self.repo.clone()
-    }
-}
-
-impl CoreOid4vcTrait for Core {
-    fn repo(&self) -> Arc<dyn RepoTrait> {
-        self.repo.clone()
-    }
-
-    fn oid4vci(&self) -> Arc<dyn Oid4vciTrait> {
-        self.oid4vci.clone()
-    }
-
+impl HasOid4Vp for CoreWallet {
     fn oid4vp(&self) -> Arc<dyn Oid4vpTrait> {
         self.oid4vp.clone()
     }
 }
 
-impl CoreTrait for Core {}
+impl HasOid4Vci for CoreWallet {
+    fn oid4vci(&self) -> Arc<dyn Oid4vciTrait> {
+        self.oid4vci.clone()
+    }
+}
+
+impl HasIdentity for CoreWallet {
+    fn identity(&self) -> Arc<dyn IdentityTrait> {
+        self.identity.clone()
+    }
+}
+
+impl KeyManagerModule for CoreWallet {}
+
+impl DidManagerModule for CoreWallet {}
+
+impl VcManagerModule for CoreWallet {}
+
+impl Oid4VcModule for CoreWallet {}
+
+impl OrchestratorTrait for CoreWallet {
+    fn config(&self) -> &CoreWalletConfig {
+        &self.config
+    }
+}

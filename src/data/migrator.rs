@@ -15,9 +15,13 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use super::BasicRepoTrait;
-use async_trait::async_trait;
-use ymir::types::wallet::fafnir::{VcEntry, VcEntryReq};
+use sea_orm_migration::{MigrationTrait, MigratorTrait};
+use ymir::data::migrations::wallet::get_wallet_migrations;
 
-#[async_trait]
-pub trait VcsTrait: BasicRepoTrait<VcEntry, VcEntryReq> {}
+pub struct Migrator;
+#[async_trait::async_trait]
+impl MigratorTrait for Migrator {
+    fn migrations() -> Vec<Box<dyn MigrationTrait>> {
+        get_wallet_migrations()
+    }
+}

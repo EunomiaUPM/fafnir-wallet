@@ -15,8 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+mod oid4vp_draft20;
 mod oid4vp_trait;
-mod service;
 
+pub use oid4vp_draft20::Oid4vpService;
 pub use oid4vp_trait::Oid4vpTrait;
-pub use service::Oid4vpService;

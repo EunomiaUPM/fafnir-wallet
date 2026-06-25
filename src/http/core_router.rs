@@ -25,24 +25,24 @@ use tower_http::cors::CorsLayer;
 use tower_http::trace::{DefaultOnResponse, TraceLayer};
 use tracing::{Level, error, info};
 
-use crate::core::Core;
-use crate::core::traits::{CoreDidsTrait, CoreKeysTrait, CoreOid4vcTrait, CoreVcsTrait};
+use crate::core::CoreWallet;
 use crate::http::{DidRouter, KeyRouter, Oid4vcRouter, VcsRouter};
+use crate::modules::{DidManagerModule, KeyManagerModule, Oid4VcModule, VcManagerModule};
 
 pub struct WalletRouter {
-    core: Arc<Core>,
+    core: Arc<CoreWallet>,
 }
 
 impl WalletRouter {
-    pub fn new(core: Arc<Core>) -> Self {
+    pub fn new(core: Arc<CoreWallet>) -> Self {
         Self { core }
     }
 
     pub fn router(self) -> Router {
-        let dids_core: Arc<dyn CoreDidsTrait> = self.core.clone();
-        let keys_core: Arc<dyn CoreKeysTrait> = self.core.clone();
-        let vcs_core: Arc<dyn CoreVcsTrait> = self.core.clone();
-        let oid4vc_core: Arc<dyn CoreOid4vcTrait> = self.core.clone();
+        let dids_core: Arc<dyn DidManagerModule> = self.core.clone();
+        let keys_core: Arc<dyn KeyManagerModule> = self.core.clone();
+        let vcs_core: Arc<dyn VcManagerModule> = self.core.clone();
+        let oid4vc_core: Arc<dyn Oid4VcModule> = self.core.clone();
 
         let dids = DidRouter::new(dids_core).router();
         let keys = KeyRouter::new(keys_core).router();

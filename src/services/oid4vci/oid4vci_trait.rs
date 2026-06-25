@@ -16,26 +16,12 @@
  */
 
 use async_trait::async_trait;
+use ymir::data::entities::wallet::vc;
 use ymir::errors::Outcome;
-use ymir::types::issuing::VCCredOffer;
-use ymir::types::wallet::fafnir::{DidEntry, KeyEntry, VcEntryReq};
+use ymir::types::issuance::VcCredOffer;
 
-/// Operaciones atómicas del lado holder en OID4VCI.
-///
-/// Este service NO toca el repo. Los modelos llegan ya cargados desde
-/// el `CoreOid4vcTrait`. `KeyEntry` se mueve porque el service necesita
-/// convertirlo en `Key` (la conversión consume el `KeyEntry`).
 #[async_trait]
 pub trait Oid4vciTrait: Send + Sync + 'static {
-    /// Parsear/fetch de una credential-offer URI → estructura tipada.
-    async fn resolve_offer(&self, uri: &str) -> Outcome<VCCredOffer>;
-
-    /// Dialogar con el issuer remoto para conseguir la VC.
-    /// Devuelve `VcEntryReq` listo para que el core lo guarde en el repo.
-    async fn accept_offer(
-        &self,
-        offer: &VCCredOffer,
-        holder_did: &DidEntry,
-        holder_key: KeyEntry,
-    ) -> Outcome<VcEntryReq>;
+    async fn resolve_offer(&self, uri: &str) -> Outcome<VcCredOffer>;
+    async fn accept_offer(&self, offer: &VcCredOffer) -> Outcome<Vec<vc::Plan>>;
 }

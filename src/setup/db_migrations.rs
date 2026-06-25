@@ -21,19 +21,15 @@ use ymir::errors::{Errors, Outcome};
 
 use crate::data::Migrator;
 
-pub struct AuthorityMigration;
+pub struct WalletMigration;
 
-impl MigratorTrait for AuthorityMigration {
+impl MigratorTrait for WalletMigration {
     fn migrations() -> Vec<Box<dyn MigrationTrait>> {
-        let mut migrations: Vec<Box<dyn MigrationTrait>> = vec![];
-        let mut authority = Migrator::migrations();
-
-        migrations.append(&mut authority);
-        migrations
+        Migrator::migrations()
     }
 }
 
-impl AuthorityMigration {
+impl WalletMigration {
     pub async fn run(db_connection: &DatabaseConnection) -> Outcome<()> {
         Self::refresh(db_connection)
             .await

@@ -15,12 +15,14 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-mod basic_repo_trait;
-mod dids_trait;
-mod keys_trait;
-mod vcs_trait;
+mod core;
+mod did_manager;
+mod key_manager;
+mod oid4vc;
+mod vc_manager;
 
-pub use basic_repo_trait::BasicRepoTrait;
-pub use dids_trait::DidsTrait;
-pub use keys_trait::KeysTrait;
-pub use vcs_trait::VcsTrait;
+pub use core::CoreTrait;
+pub use did_manager::DidManagerModule;
+pub use key_manager::KeyManagerModule;
+pub use oid4vc::Oid4VcModule;
+pub use vc_manager::VcManagerModule;

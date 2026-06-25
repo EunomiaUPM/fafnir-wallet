@@ -17,20 +17,22 @@
 
 use std::sync::Arc;
 
-use crate::core::traits::CoreKeysTrait;
+use crate::modules::KeyManagerModule;
+use axum::extract::rejection::JsonRejection;
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::routing::{get, post};
 use axum::{Json, Router};
+use ymir::data::entities::wallet::key;
 use ymir::errors::AppResult;
-use ymir::types::wallet::fafnir::{KeyEntry, KeyEntryReq};
+use ymir::utils::extract_payload;
 
 pub struct KeyRouter {
-    core: Arc<dyn CoreKeysTrait>,
+    core: Arc<dyn KeyManagerModule>,
 }
 
 impl KeyRouter {
-    pub fn new(core: Arc<dyn CoreKeysTrait>) -> Self {
+    pub fn new(core: Arc<dyn KeyManagerModule>) -> Self {
         Self { core }
     }
 
@@ -42,29 +44,32 @@ impl KeyRouter {
             .with_state(self.core)
     }
 
-    async fn get_all(State(core): State<Arc<dyn CoreKeysTrait>>) -> AppResult<Json<Vec<KeyEntry>>> {
+    async fn get_all(
+        State(core): State<Arc<dyn KeyManagerModule>>,
+    ) -> AppResult<Json<Vec<key::Model>>> {
         Ok(Json(core.get_all().await?))
     }
 
+    async fn create(
+        State(core): State<Arc<dyn KeyManagerModule>>,
+        payload: Result<Json<key::Plan>, JsonRejection>,
+    ) -> AppResult<(StatusCode, Json<key::Model>)> {
+        let payload = extract_payload(payload)?;
+        Ok((StatusCode::CREATED, Json(core.create(payload).await?)))
+    }
+
     async fn get_by_id(
-        State(core): State<Arc<dyn CoreKeysTrait>>,
+        State(core): State<Arc<dyn KeyManagerModule>>,
         Path(id): Path<String>,
-    ) -> AppResult<Json<KeyEntry>> {
+    ) -> AppResult<Json<key::Model>> {
         Ok(Json(core.get_by_id(id).await?))
     }
 
-    async fn create(
-        State(core): State<Arc<dyn CoreKeysTrait>>,
-        Json(entry): Json<KeyEntryReq>,
-    ) -> AppResult<(StatusCode, Json<KeyEntry>)> {
-        Ok((StatusCode::CREATED, Json(core.create(entry).await?)))
-    }
-
     async fn delete(
-        State(core): State<Arc<dyn CoreKeysTrait>>,
+        State(core): State<Arc<dyn KeyManagerModule>>,
         Path(id): Path<String>,
     ) -> AppResult<StatusCode> {
         core.delete(id).await?;
-        Ok(StatusCode::NO_CONTENT)
+        Ok(StatusCode::OK)
     }
 }

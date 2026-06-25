@@ -1,5 +1,5 @@
 target
 .idea
 .claude
-data
 tmp_keys
+.codegraph

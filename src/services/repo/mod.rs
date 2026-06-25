@@ -15,11 +15,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-mod disk;
-mod global;
 mod repo_trait;
-pub mod subtraits;
+mod service;
 
-pub use disk::DiskRepo;
-pub use global::GlobalRepo;
 pub use repo_trait::RepoTrait;
+pub use service::WalletRepo;

@@ -19,21 +19,18 @@ use serde::{Deserialize, Serialize};
 
 use std::path::PathBuf;
 use tracing::debug;
-use ymir::config::traits::HostsConfigTrait;
-use ymir::config::types::CommonHostsConfig;
+use ymir::config::traits::{DatabaseConfigTrait, HostsConfigTrait};
+use ymir::config::types::{CommonHostsConfig, DatabaseConfig};
 use ymir::errors::{Errors, Outcome};
 use ymir::utils::read;
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct CoreWalletConfig {
     hosts: CommonHostsConfig,
-    path: PathBuf,
-    /// Si `true`, las URLs externas (issuer/verifier) con host
-    /// `127.0.0.1` o `localhost` se reescriben a `host.docker.internal`
-    /// antes de hacer la petición HTTP. Útil cuando la wallet corre
-    /// dentro de un contenedor Docker.
+    db: DatabaseConfig,
     #[serde(default)]
     docker: bool,
+    is_vault_real: bool,
 }
 
 impl CoreWalletConfig {
@@ -53,14 +50,17 @@ impl HostsConfigTrait for CoreWalletConfig {
     }
 }
 
-impl CoreWalletConfig {
-    pub fn path(&self) -> &PathBuf {
-        &self.path
+impl DatabaseConfigTrait for CoreWalletConfig {
+    fn db(&self) -> &DatabaseConfig {
+        &self.db
     }
+}
 
-    /// `true` si la wallet debe reescribir `127.0.0.1` / `localhost`
-    /// → `host.docker.internal` en las URLs externas.
+impl CoreWalletConfig {
     pub fn is_docker(&self) -> bool {
         self.docker
+    }
+    pub fn is_vault_real(&self) -> bool {
+        self.is_vault_real
     }
 }

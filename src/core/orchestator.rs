@@ -14,3 +14,14 @@
  * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
+
+use crate::config::CoreWalletConfig;
+use crate::modules::{DidManagerModule, KeyManagerModule, Oid4VcModule, VcManagerModule};
+use async_trait::async_trait;
+
+#[async_trait]
+pub trait OrchestratorTrait:
+    KeyManagerModule + DidManagerModule + VcManagerModule + Oid4VcModule + Send + Sync + 'static
+{
+    fn config(&self) -> &CoreWalletConfig;
+}

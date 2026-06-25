@@ -15,7 +15,9 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-pub mod http;
+mod has_service_trait;
 pub mod oid4vci;
 pub mod oid4vp;
 pub mod repo;
+
+pub use has_service_trait::*;

@@ -16,7 +16,7 @@
  */
 
 mod oid4vci_trait;
-mod service;
+mod oidc4vci_1_0;
 
 pub use oid4vci_trait::Oid4vciTrait;
-pub use service::Oid4vciService;
+pub use oidc4vci_1_0::Oid4vciService;

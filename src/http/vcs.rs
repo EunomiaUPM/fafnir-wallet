@@ -17,47 +17,56 @@
 
 use std::sync::Arc;
 
-use crate::core::traits::CoreVcsTrait;
-use axum::extract::{Path, Query, State};
+use crate::modules::VcManagerModule;
+use axum::extract::rejection::JsonRejection;
+use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::routing::get;
 use axum::{Json, Router};
-use serde::Deserialize;
+use ymir::data::entities::wallet::vc;
 use ymir::errors::AppResult;
-use ymir::types::wallet::fafnir::VcEntry;
+use ymir::utils::extract_payload;
 
 pub struct VcsRouter {
-    core: Arc<dyn CoreVcsTrait>,
+    core: Arc<dyn VcManagerModule>,
 }
 
 impl VcsRouter {
-    pub fn new(core: Arc<dyn CoreVcsTrait>) -> Self {
+    pub fn new(core: Arc<dyn VcManagerModule>) -> Self {
         Self { core }
     }
 
     pub fn router(self) -> Router {
         Router::new()
             .route("/all", get(Self::list))
+            .route("/store", get(Self::store))
             .route("/{id}", get(Self::get_by_id).delete(Self::delete))
             .with_state(self.core)
     }
 
-    async fn list(State(core): State<Arc<dyn CoreVcsTrait>>) -> AppResult<Json<Vec<VcEntry>>> {
+    async fn list(State(core): State<Arc<dyn VcManagerModule>>) -> AppResult<Json<Vec<vc::Model>>> {
         Ok(Json(core.get_all().await?))
+    }
+    async fn store(
+        State(core): State<Arc<dyn VcManagerModule>>,
+        payload: Result<Json<vc::Plan>, JsonRejection>,
+    ) -> AppResult<Json<vc::Model>> {
+        let payload = extract_payload(payload)?;
+        Ok(Json(core.store(payload).await?))
     }
 
     async fn get_by_id(
-        State(core): State<Arc<dyn CoreVcsTrait>>,
+        State(core): State<Arc<dyn VcManagerModule>>,
         Path(id): Path<String>,
-    ) -> AppResult<Json<VcEntry>> {
+    ) -> AppResult<Json<vc::Model>> {
         Ok(Json(core.get_by_id(id).await?))
     }
 
     async fn delete(
-        State(core): State<Arc<dyn CoreVcsTrait>>,
+        State(core): State<Arc<dyn VcManagerModule>>,
         Path(id): Path<String>,
     ) -> AppResult<StatusCode> {
         core.delete(id).await?;
-        Ok(StatusCode::NO_CONTENT)
+        Ok(StatusCode::OK)
     }
 }

@@ -15,4 +15,7 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-mod entries;
+pub enum DidSearch {
+    Id(String),
+    Did(String),
+}

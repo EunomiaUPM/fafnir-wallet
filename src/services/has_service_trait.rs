@@ -15,24 +15,20 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::services::repo::RepoTrait;
-use async_trait::async_trait;
+use super::repo::RepoTrait;
+use crate::services::oid4vci::Oid4vciTrait;
+use crate::services::oid4vp::Oid4vpTrait;
 use std::sync::Arc;
-use ymir::errors::Outcome;
-use ymir::types::wallet::fafnir::VcEntry;
 
-#[async_trait]
-pub trait CoreVcsTrait: Send + Sync + 'static {
+pub trait HasRepo {
     fn repo(&self) -> Arc<dyn RepoTrait>;
-    async fn get_all(&self) -> Outcome<Vec<VcEntry>> {
-        self.repo().vcs().get_all().await
-    }
-
-    async fn get_by_id(&self, id: String) -> Outcome<VcEntry> {
-        self.repo().vcs().get_by_id(&id).await
-    }
-
-    async fn delete(&self, id: String) -> Outcome<()> {
-        self.repo().vcs().delete(&id).await
-    }
 }
+
+pub trait HasOid4Vci {
+    fn oid4vci(&self) -> Arc<dyn Oid4vciTrait>;
+}
+
+pub trait HasOid4Vp {
+    fn oid4vp(&self) -> Arc<dyn Oid4vpTrait>;
+}
+
