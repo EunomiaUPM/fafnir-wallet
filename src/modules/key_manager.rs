@@ -40,7 +40,6 @@ pub trait KeyManagerModule: HasVault + HasRepo + Send + Sync + 'static {
 
         let key_model = key::Model {
             id: plan.id,
-            r#default: plan.r#default,
             alias: plan.alias,
             kty: key.kty().clone(),
             crv: key.crv().cloned(),

@@ -18,6 +18,7 @@
 use sea_orm::DatabaseConnection;
 use sea_orm_migration::{MigrationTrait, MigratorTrait};
 use ymir::errors::{Errors, Outcome};
+use sea_orm::sea_query::{Alias, DynIden, IntoIden};
 
 use crate::data::Migrator;
 
@@ -27,11 +28,14 @@ impl MigratorTrait for WalletMigration {
     fn migrations() -> Vec<Box<dyn MigrationTrait>> {
         Migrator::migrations()
     }
+    fn migration_table_name() -> DynIden {
+        Alias::new("seaql_fafnir_wallet_migrations").into_iden()
+    }
 }
 
 impl WalletMigration {
     pub async fn run(db_connection: &DatabaseConnection) -> Outcome<()> {
-        Self::refresh(db_connection)
+        Self::up(db_connection, None)
             .await
             .map_err(|e| Errors::db("Error migrating data", Some(Box::new(e))))
     }

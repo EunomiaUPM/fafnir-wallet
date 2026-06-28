@@ -25,7 +25,7 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tracing::debug;
-use ymir::errors::{Errors, Outcome};
+use ymir::errors::Outcome;
 use ymir::services::vault::fake_vault::FakeVaultService;
 use ymir::services::vault::vault_rs::RealVaultService;
 use ymir::services::vault::{VaultService, VaultTrait};
@@ -77,16 +77,14 @@ impl WalletCommands {
                 };
 
                 let mut mapa = HashMap::new();
-                let vault_path =
-                    PathBuf::from(std::env::var("VAULT_PATH").map_err(|e| {
-                        Errors::vault("VAULT_PATH env var not set", Some(Box::new(e)))
-                    })?);
-
-                let secret_path = vault_path.join("secrets");
-
-                let vault_path = expect_from_env("VAULT_APP_DB");
-                let db_json: Value = read_json(secret_path.join("db.json"))?;
-                mapa.insert(vault_path, db_json);
+                let vault_path = expect_from_env("VAULT_PATH");
+                let vault_path = PathBuf::from(vault_path);
+                let db_path = expect_from_env("VAULT_APP_DB");
+                let path = vault_path.join(db_path);
+                println!("{}", path.display());
+                
+                let db_json: Value = read_json(path)?;
+                mapa.insert(vault_path.display().to_string(), db_json);
 
                 vault.write_all_secrets(Some(mapa)).await?;
                 let db_connection = vault.get_db_connection(&config).await?;

@@ -24,7 +24,7 @@ use axum::response::IntoResponse;
 use tower_http::cors::CorsLayer;
 use tower_http::trace::{DefaultOnResponse, TraceLayer};
 use tracing::{Level, error, info};
-
+use uuid::Uuid;
 use crate::core::CoreWallet;
 use crate::http::{DidRouter, KeyRouter, Oid4vcRouter, VcsRouter};
 use crate::modules::{DidManagerModule, KeyManagerModule, Oid4VcModule, VcManagerModule};
@@ -57,6 +57,9 @@ impl WalletRouter {
             .fallback(Self::fallback)
             .layer(
                 TraceLayer::new_for_http()
+                    .make_span_with(
+                        |_req: &Request<_>| tracing::info_span!("request", id = %Uuid::new_v4()),
+                    )
                     .on_request(|req: &Request<_>, _span: &tracing::Span| {
                         info!("{} {}", req.method(), req.uri().path());
                     })

@@ -27,9 +27,8 @@ use ymir::utils::read;
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct CoreWalletConfig {
     hosts: CommonHostsConfig,
-    db: DatabaseConfig,
-    #[serde(default)]
-    docker: bool,
+    db_config: DatabaseConfig,
+    is_docker: bool,
     is_vault_real: bool,
 }
 
@@ -52,13 +51,13 @@ impl HostsConfigTrait for CoreWalletConfig {
 
 impl DatabaseConfigTrait for CoreWalletConfig {
     fn db(&self) -> &DatabaseConfig {
-        &self.db
+        &self.db_config
     }
 }
 
 impl CoreWalletConfig {
     pub fn is_docker(&self) -> bool {
-        self.docker
+        self.is_docker
     }
     pub fn is_vault_real(&self) -> bool {
         self.is_vault_real

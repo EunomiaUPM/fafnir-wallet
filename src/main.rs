@@ -50,6 +50,8 @@ async fn main() -> Outcome<()> {
         })?;
     tracing_subscriber::fmt().with_env_filter(filter).init();
     info!("{}", INFO);
-    WalletCommands::init_command_line().await?;
-    Ok(())
+    WalletCommands::init_command_line().await.map_err(|e| {
+        e.log();
+        e
+    })
 }

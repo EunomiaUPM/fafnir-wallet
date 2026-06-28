@@ -15,13 +15,13 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-use crate::services::{ HasRepo};
+use crate::services::HasRepo;
 use crate::types::DidSearch;
 use async_trait::async_trait;
 use ymir::data::entities::wallet::{did, key};
 use ymir::errors::{BadFormat, Errors, Outcome};
-use ymir::services::{HasVault, HasIdentity};
 use ymir::services::vault::VaultTrait;
+use ymir::services::{HasIdentity, HasVault};
 use ymir::types::dids::{DidDocument, DidType};
 use ymir::types::keys::PrivateKey;
 use ymir::types::secrets::PemHelper;
@@ -63,7 +63,10 @@ pub trait DidManagerModule: HasIdentity + HasVault + HasRepo + Send + Sync + 'st
             mapa.push((priv_key, frag));
         }
 
-        let did_document = DidDocument::base(&did, mapa);
+        let mut did_document = DidDocument::base(&did, mapa);
+        if let Some(services) = &entry.service {
+            did_document.add_services(services.clone());
+        };
 
         let is_first = self.repo().dids().get_all(None, None).await?.is_empty();
 
