@@ -22,7 +22,7 @@ use ymir::data::entities::wallet::{did, key};
 use ymir::errors::{BadFormat, Errors, Outcome};
 use ymir::services::vault::VaultTrait;
 use ymir::services::{HasIdentity, HasVault};
-use ymir::types::dids::{DidDocument, DidType};
+use ymir::types::dids::{DidBuilder, DidDocument, DidType};
 use ymir::types::keys::PrivateKey;
 use ymir::types::secrets::PemHelper;
 use ymir::types::wallet::KeyRef;
@@ -33,7 +33,7 @@ pub trait DidManagerModule: HasIdentity + HasVault + HasRepo + Send + Sync + 'st
         self.repo().dids().get_all(None, None).await
     }
 
-    async fn create(&self, entry: did::Plan) -> Outcome<did::Model> {
+    async fn create(&self, mut entry: did::Plan) -> Outcome<did::Model> {
         if entry.keys.is_empty() {
             return Err(Errors::format(
                 BadFormat::Received,
@@ -48,6 +48,24 @@ pub trait DidManagerModule: HasIdentity + HasVault + HasRepo + Send + Sync + 'st
             let model = self.repo().keys().get_by_id(id).await?;
             key_models.push(model)
         }
+
+        // For did:jwk the PEM is part of the identifier. If the caller did not embed
+        // the PEM in the builder (e.g. the admin UI, which only knows the key id),
+        // derive it from the first key referenced in the plan.
+        entry.builder = match entry.builder {
+            DidBuilder::Jwk(_) => {
+                let first = key_models.first().ok_or_else(|| {
+                    Errors::format(
+                        BadFormat::Received,
+                        "did:jwk requires a key reference",
+                        None,
+                    )
+                })?;
+                let helper: PemHelper = self.vault().read(None, &first.id).await?;
+                DidBuilder::new_jwk(helper.pem())
+            }
+            other => other,
+        };
 
         let did = entry.builder.build()?;
 

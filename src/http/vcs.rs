@@ -21,7 +21,7 @@ use crate::modules::VcManagerModule;
 use axum::extract::rejection::JsonRejection;
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
-use axum::routing::get;
+use axum::routing::{get, post};
 use axum::{Json, Router};
 use ymir::data::entities::wallet::vc;
 use ymir::errors::AppResult;
@@ -39,7 +39,7 @@ impl VcsRouter {
     pub fn router(self) -> Router {
         Router::new()
             .route("/all", get(Self::list))
-            .route("/store", get(Self::store))
+            .route("/store", post(Self::store))
             .route("/{id}", get(Self::get_by_id).delete(Self::delete))
             .with_state(self.core)
     }

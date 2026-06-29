@@ -101,7 +101,12 @@ impl Oid4vpTrait for Oid4vpService {
         let client_id = get_query_param(&parsed, "client_id")?;
         let nonce = get_query_param(&parsed, "nonce")?;
         let response_uri = get_query_param(&parsed, "response_uri")?;
-        let state = get_query_param(&parsed, "state")?;
+        // `state` is OPTIONAL per OID4VP Draft 20: if the verifier included it,
+        // we must echo it back in the response; otherwise we omit it.
+        let state: Option<String> = parsed
+            .query_pairs()
+            .find(|(k, _)| k == "state")
+            .map(|(_, v)| v.into_owned());
 
         let vc_jwts: Vec<String> = selected_vcs
             .iter()
@@ -156,7 +161,9 @@ impl Oid4vpTrait for Oid4vpService {
             "presentation_submission".to_string(),
             serde_json::to_string(&submission)?,
         );
-        form.insert("state".to_string(), state);
+        if let Some(state) = state {
+            form.insert("state".to_string(), state);
+        }
 
         let mut headers = HeaderMap::new();
         headers.insert(
