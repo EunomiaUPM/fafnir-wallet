@@ -25,6 +25,7 @@ use tower_http::cors::CorsLayer;
 use tower_http::trace::{DefaultOnResponse, TraceLayer};
 use tracing::{Level, error, info};
 use uuid::Uuid;
+use ymir::http::HealthRouter;
 use crate::core::CoreWallet;
 use crate::http::{DidRouter, KeyRouter, Oid4vcRouter, VcsRouter};
 use crate::modules::{DidManagerModule, KeyManagerModule, Oid4VcModule, VcManagerModule};
@@ -48,8 +49,10 @@ impl WalletRouter {
         let keys = KeyRouter::new(keys_core).router();
         let vcs = VcsRouter::new(vcs_core).router();
         let oid4vc = Oid4vcRouter::new(oid4vc_core).router();
+        let health = HealthRouter::new();
 
         Router::new()
+            .merge(health.router())
             .nest("/dids", dids)
             .nest("/keys", keys)
             .nest("/vcs", vcs)

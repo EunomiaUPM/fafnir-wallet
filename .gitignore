@@ -3,3 +3,7 @@ target
 .claude
 tmp_keys
 .codegraph
+**.ps1
+static/config/dev
+static/env
+vault

@@ -81,6 +81,7 @@ impl Oid4vciTrait for Oid4vciService {
 
         if let Ok(uri) = get_query_param(&parsed, "credential_offer_uri") {
             debug!("OID4VCI: offer by reference → {}", uri);
+            let uri = normalize_host(uri, self.is_docker);
             let res = http_client().get(&uri, Some(json_headers())).await?;
             return parse_or_fail(res, &uri, "GET").await;
         }
@@ -199,15 +200,16 @@ impl Oid4vciService {
         );
         headers.insert(ACCEPT, "application/json".parse_header()?);
 
+        let token_endpoint = normalize_host(&auth_meta.token_endpoint, self.is_docker);
         let res = http_client()
             .post(
-                &auth_meta.token_endpoint,
+                &token_endpoint,
                 Some(headers),
                 HttpBody::form(&token_req)?,
             )
             .await?;
 
-        parse_or_fail(res, &auth_meta.token_endpoint, "POST").await
+        parse_or_fail(res, &token_endpoint, "POST").await
     }
 
     async fn build_proof(&self, credential_issuer: &str, c_nonce: Option<&str>) -> Outcome<String> {
@@ -277,9 +279,9 @@ impl Oid4vciService {
             AUTHORIZATION,
             format!("Bearer {}", access_token).parse_header()?,
         );
-
+        let credential_endpoint = normalize_host(credential_endpoint, self.is_docker);
         let res = http_client()
-            .post(credential_endpoint, Some(headers), HttpBody::json(&req)?)
+            .post(&credential_endpoint, Some(headers), HttpBody::json(&req)?)
             .await?;
 
         let give_vc: GiveVC = parse_or_fail(res, &credential_endpoint, "POST").await?;

@@ -75,6 +75,7 @@ impl Oid4vpTrait for Oid4vpService {
 
         if let Ok(uri) = get_query_param(&parsed, "presentation_definition_uri") {
             debug!("OID4VCI: offer by reference → {}", uri);
+            let uri = normalize_host(uri, self.is_docker);
             let res = http_client().get(&uri, Some(json_headers())).await?;
             return parse_or_fail(res, &uri, "GET").await;
         }
@@ -94,13 +95,13 @@ impl Oid4vpTrait for Oid4vpService {
         holder_did: &Did,
         holder_key: &KeyRef,
     ) -> Outcome<Option<String>> {
-        let uri = normalize_host(uri, self.is_docker);
         let parsed = Url::parse(&uri)
             .map_err(|e| Errors::parse(format!("Invalid request URI: {uri}"), Some(Box::new(e))))?;
 
         let client_id = get_query_param(&parsed, "client_id")?;
         let nonce = get_query_param(&parsed, "nonce")?;
         let response_uri = get_query_param(&parsed, "response_uri")?;
+        let response_uri = normalize_host(response_uri, self.is_docker);
         // `state` is OPTIONAL per OID4VP Draft 20: if the verifier included it,
         // we must echo it back in the response; otherwise we omit it.
         let state: Option<String> = parsed
@@ -176,6 +177,9 @@ impl Oid4vpTrait for Oid4vpService {
             .post(&response_uri, Some(headers), HttpBody::form(&form)?)
             .await?;
 
+        if !resp.status().is_success() {
+            return Err(Errors::forbidden("Verification failed", None))
+        }
         let body = resp.parse_text().await.unwrap_or_default();
         if body.trim().is_empty() {
             return Ok(None);

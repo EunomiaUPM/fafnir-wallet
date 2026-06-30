@@ -38,24 +38,21 @@ RUN adduser \
     --uid "${UID}" \
     appuser
 
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libssl3 ca-certificates wget && \
+    rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 COPY --from=backend-builder /bin/${APP_NAME} /usr/local/bin/
 RUN chmod +x /usr/local/bin/${APP_NAME}
 
-# Config por defecto pensada para correr siempre como contenedor
-# (url: 'fafnir-wallet' = nombre de servicio docker-compose).
-# Para usar otro yaml: o montas un volumen sobre esta misma ruta,
-# o sobrescribes `command:` en el compose.
-COPY static/environment/config/prod/fafnir.yaml /app/static/environment/config/prod/fafnir.yaml
+COPY static/config/fafnir-docker.yaml /app/static/config/fafnir-docker.yaml
 
-# Carpeta de persistencia + propiedad de /app para `appuser` no-root.
-# Sin esto, `create_dir_all("/app/data")` revienta con Permission
-# denied (porque `WORKDIR /app` se crea por defecto como root).
-RUN mkdir -p /app/data && chown -R appuser:appuser /app
+RUN mkdir -p /app/data /app/vault/secrets && chown -R appuser:appuser /app
 
 USER appuser
 EXPOSE 7001
 ENV RUST_LOG=info
 
 ENTRYPOINT ["/usr/local/bin/fafnir-wallet"]
-CMD ["start", "--env-file", "static/environment/config/prod/fafnir.yaml"]
+CMD ["start", "--env-file", "static/config/fafnir-docker.yaml"]
