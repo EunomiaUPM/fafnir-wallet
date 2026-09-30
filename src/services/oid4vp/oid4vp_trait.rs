@@ -16,9 +16,9 @@
  */
 
 use async_trait::async_trait;
-use ymir::capabilities::Did;
 use ymir::data::entities::wallet::vc;
 use ymir::errors::Outcome;
+use ymir::types::dids::Did;
 use ymir::types::vcs::VPDef;
 use ymir::types::wallet::KeyRef;
 

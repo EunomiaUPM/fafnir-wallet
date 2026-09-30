@@ -18,9 +18,9 @@
 use crate::services::{HasOid4Vci, HasOid4Vp, HasRepo};
 use async_trait::async_trait;
 use chrono::Utc;
-use ymir::capabilities::Did;
 use ymir::data::entities::wallet::vc;
 use ymir::errors::{Errors, Outcome};
+use ymir::types::dids::Did;
 use ymir::types::issuance::VcBody;
 use ymir::types::issuance::VcCredOffer;
 use ymir::types::jwt::{Jwt, VCJwtClaims};
