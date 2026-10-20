@@ -16,33 +16,17 @@
  */
 use reqwest::Response;
 use serde::de::DeserializeOwned;
-use ymir::errors::{Errors, Outcome, PetitionFailure};
 use url::Url;
+use ymir::errors::{Errors, Outcome, PetitionFailure};
 use ymir::utils::ResponseExt;
-
-// pub fn normalize_host(host: impl Into<String>, is_docker: bool) -> String {
-//     let host = host.into();
-//     if is_docker {
-//         if host.contains("localhost") || host.contains("127.0.0.1") {
-//             host.replace("localhost", "host.docker.internal")
-//                 .replace("127.0.0.1", "host.docker.internal")
-//         } else {
-//             host.to_string()
-//         }
-//     } else {
-//         if host.contains("host.docker.internal") {
-//             host.replace("host.docker.internal", "localhost")
-//         } else {
-//             host.to_string()
-//         }
-//     }
-// }
 
 /// Swaps the URL's host when it is exactly a loopback (in Docker) or `host.docker.internal`
 /// (outside), so names like `provider.localhost` stay as they are.
 pub fn normalize_host(host: impl Into<String>, is_docker: bool) -> String {
     let host = host.into();
-    let Some(current) = Url::parse(&host).ok().and_then(|url| url.host_str().map(str::to_string))
+    let Some(current) = Url::parse(&host)
+        .ok()
+        .and_then(|url| url.host_str().map(str::to_string))
     else {
         return host;
     };
