@@ -23,6 +23,7 @@ use crate::services::oid4vp::Oid4vpTrait;
 use crate::services::repo::RepoTrait;
 use crate::services::{HasOid4Vci, HasOid4Vp, HasRepo};
 use std::sync::Arc;
+use ymir::errors::{BadFormat, Errors, Outcome};
 use ymir::services::identity::{IdentityManager, IdentityTrait};
 use ymir::services::vault::VaultService;
 use ymir::services::{HasIdentity, HasVault};
@@ -31,7 +32,8 @@ pub struct CoreWallet {
     identity: Arc<IdentityManager>,
     repo: Arc<dyn RepoTrait>,
     oid4vci: Arc<dyn Oid4vciTrait>,
-    oid4vp: Arc<dyn Oid4vpTrait>,
+    oid4vp_draft20: Arc<dyn Oid4vpTrait>,
+    oid4vp_v1_0: Arc<dyn Oid4vpTrait>,
     vault: Arc<VaultService>,
     config: CoreWalletConfig,
 }
@@ -41,7 +43,8 @@ impl CoreWallet {
         identity: Arc<IdentityManager>,
         repo: Arc<dyn RepoTrait>,
         oid4vci: Arc<dyn Oid4vciTrait>,
-        oid4vp: Arc<dyn Oid4vpTrait>,
+        oid4vp_draft20: Arc<dyn Oid4vpTrait>,
+        oid4vp_v1_0: Arc<dyn Oid4vpTrait>,
         vault: Arc<VaultService>,
         config: CoreWalletConfig,
     ) -> Self {
@@ -49,7 +52,8 @@ impl CoreWallet {
             identity,
             repo,
             oid4vci,
-            oid4vp,
+            oid4vp_draft20,
+            oid4vp_v1_0,
             vault,
             config,
         }
@@ -69,8 +73,19 @@ impl HasRepo for CoreWallet {
 }
 
 impl HasOid4Vp for CoreWallet {
-    fn oid4vp(&self) -> Arc<dyn Oid4vpTrait> {
-        self.oid4vp.clone()
+    /// 1.0 first, then draft 20: the first version that handles `uri`.
+    fn oid4vp(&self, uri: &str) -> Outcome<Arc<dyn Oid4vpTrait>> {
+        [&self.oid4vp_v1_0, &self.oid4vp_draft20]
+            .into_iter()
+            .find(|version| version.handles(uri))
+            .cloned()
+            .ok_or_else(|| {
+                Errors::format(
+                    BadFormat::Received,
+                    "No supported OpenID4VP version handles this request",
+                    None,
+                )
+            })
     }
 }
 

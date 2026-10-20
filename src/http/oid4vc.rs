@@ -25,9 +25,10 @@ use axum::{Json, Router};
 use serde::Deserialize;
 use ymir::errors::AppResult;
 use ymir::types::issuance::VcCredOffer;
-use ymir::types::vcs::VPDef;
+// use ymir::types::vcs::VPDef;
 
 use crate::modules::Oid4VcModule;
+use ymir::types::verification::PresentationRequest;
 
 /// Body de los endpoints que reciben una URI OIDC opaca.
 #[derive(Debug, Deserialize)]
@@ -95,7 +96,7 @@ impl Oid4vcRouter {
     async fn vp_resolve_request(
         State(core): State<Arc<dyn Oid4VcModule>>,
         Json(payload): Json<UriPayload>,
-    ) -> AppResult<Json<VPDef>> {
+    ) -> AppResult<Json<PresentationRequest>> {
         Ok(Json(core.vp_resolve_request(&payload.uri).await?))
     }
 

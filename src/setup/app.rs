@@ -21,7 +21,7 @@ use crate::config::CoreWalletConfig;
 use crate::core::CoreWallet;
 use crate::http::WalletRouter;
 use crate::services::oid4vci::Oid4vciService;
-use crate::services::oid4vp::Oid4vpService;
+use crate::services::oid4vp::{oid4vp_1_0, oid4vp_draft20};
 use crate::services::repo::{RepoTrait, WalletRepo};
 use axum::{Router, serve};
 use tokio::net::TcpListener;
@@ -52,9 +52,24 @@ impl FafnirWallet {
             vault.clone(),
             config.is_docker(),
         ));
-        let oid4vp = Arc::new(Oid4vpService::new(vault.clone(), config.is_docker()));
+        let oid4vp_draft20 = Arc::new(oid4vp_draft20::Oid4vpService::new(
+            vault.clone(),
+            config.is_docker(),
+        ));
+        let oid4vp_v1_0 = Arc::new(oid4vp_1_0::Oid4vpService::new(
+            vault.clone(),
+            config.is_docker(),
+        ));
 
-        let core = CoreWallet::new(identity_manager, repo, oid4vci, oid4vp, vault, config);
+        let core = CoreWallet::new(
+            identity_manager,
+            repo,
+            oid4vci,
+            oid4vp_draft20,
+            oid4vp_v1_0,
+            vault,
+            config,
+        );
         let router = WalletRouter::new(Arc::new(core));
         Ok(router.router())
     }

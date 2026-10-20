@@ -21,7 +21,8 @@ use chrono::Utc;
 use ymir::data::entities::wallet::vc;
 use ymir::errors::Outcome;
 use ymir::types::issuance::VcBody;
-use ymir::types::jwt::{Jwt, VCJwtClaims};
+use ymir::types::jwt::Jwt;
+use ymir::types::vcs::VcPayload;
 use ymir::types::vcs::{VcFormat, VcType};
 
 #[async_trait]
@@ -37,8 +38,8 @@ pub trait VcManagerModule: HasRepo + Send + Sync + 'static {
     async fn store(&self, plan: vc::Plan) -> Outcome<vc::Model> {
         let doc = match &plan.vc_body {
             VcBody::Jwt(jwt) => {
-                let claims: VCJwtClaims = Jwt::parse(jwt)?.unsafe_claims()?;
-                claims.vc_doc().clone()
+                let claims = Jwt::<VcPayload>::parse(jwt)?;
+                claims.unverified_claims().vc_doc().clone()
             }
             VcBody::JsonLd(value) => serde_json::from_value(value.clone())?,
         };

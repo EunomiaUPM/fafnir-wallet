@@ -15,8 +15,12 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-mod oid4vp_draft20;
-mod oid4vp_trait;
+//! OpenID4VP on the wallet's side: one service per version, all behind [`Oid4vpTrait`].
 
-pub use oid4vp_draft20::Oid4vpService;
+pub mod oid4vp_1_0;
+pub mod oid4vp_draft20;
+mod oid4vp_trait;
+mod presented;
+
 pub use oid4vp_trait::Oid4vpTrait;
+pub(crate) use presented::presented_vcs;

@@ -19,19 +19,37 @@ use async_trait::async_trait;
 use ymir::data::entities::wallet::vc;
 use ymir::errors::Outcome;
 use ymir::types::dids::Did;
-use ymir::types::vcs::VPDef;
 use ymir::types::wallet::KeyRef;
 
+use ymir::types::verification::PresentationRequest;
+
+/// One OpenID4VP version on the wallet's side; the wallet picks the one that [`handles`] a URI.
+///
+/// [`handles`]: Oid4vpTrait::handles
 #[async_trait]
 pub trait Oid4vpTrait: Send + Sync + 'static {
-    async fn resolve_request(&self, uri: &str) -> Outcome<VPDef>;
+    /// Whether `uri` is a request of this version.
+    fn handles(&self, uri: &str) -> bool;
 
+    /// Reads the request of an `openid4vp://` URI.
+    async fn resolve_request(&self, uri: &str) -> Outcome<PresentationRequest>;
+
+    /// Presents the credentials chosen for each requested item (input descriptor or credential
+    /// query, by id), signed with `holder_key`. Returns where the verifier sends the user next.
     async fn present(
         &self,
-        uri: &str,
-        vpd: &VPDef,
-        selected_vcs: &[vc::Model],
+        request: &PresentationRequest,
+        selected_vcs: &[(String, Vec<vc::Model>)],
         holder_did: &Did,
         holder_key: &KeyRef,
     ) -> Outcome<Option<String>>;
+
+    /// Tells the verifier this wallet will not present (`error`, e.g. `access_denied`), so it
+    /// closes the request instead of waiting.
+    async fn refuse(
+        &self,
+        request: &PresentationRequest,
+        error: &str,
+        description: &str,
+    ) -> Outcome<()>;
 }

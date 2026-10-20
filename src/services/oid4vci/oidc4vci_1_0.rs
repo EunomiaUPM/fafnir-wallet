@@ -34,6 +34,7 @@ use ymir::types::issuance::{
     AuthServerMetadata, CredReqProof, CredentialRequest, DidPossession, GiveVC, IssuerMetadata,
     IssuingToken, OidcGrantType, PreAuthorizedCodeGrant, TokenRequest, VcCredOffer,
 };
+use ymir::types::jwt::JwtClaims;
 use ymir::types::keys::{PrivateKey, SigningCtx};
 use ymir::types::secrets::PemHelper;
 use ymir::types::vcs::VcTypeConfig;
@@ -232,28 +233,20 @@ impl Oid4vciService {
             identity.key_ref().fragment().to_string(),
         );
 
-        let now = Utc::now().timestamp();
-        let possession = DidPossession {
-            iss: Some(identity.did().id().to_string()),
-            aud: credential_issuer.to_string(),
-            iat: now,
-            nonce: c_nonce
-                .ok_or_else(|| {
-                    Errors::format(
-                        BadFormat::Received,
-                        "Token response missing c_nonce — required for proof JWT",
-                        None,
-                    )
-                })?
-                .to_string(),
-        };
+        let c_nonce = c_nonce.ok_or_else(|| {
+            Errors::format(
+                BadFormat::Received,
+                "Token response missing c_nonce — required for proof JWT",
+                None,
+            )
+        })?;
+        let possession = JwtClaims::new(DidPossession {})
+            .with_iss(identity.did().id())
+            .with_aud(credential_issuer)
+            .with_iat(Utc::now())
+            .with_nonce(c_nonce);
 
-        let jwt = Signer::sign_enveloped(
-            &sig_ctx,
-            "openid4vci-proof+jwt",
-            "json",
-            &serde_json::to_value(&possession)?,
-        )?;
+        let jwt = Signer::sign_enveloped(&sig_ctx, &possession)?;
         Ok(jwt.as_str().to_string())
     }
 

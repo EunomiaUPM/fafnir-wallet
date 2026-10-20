@@ -19,6 +19,7 @@ use super::repo::RepoTrait;
 use crate::services::oid4vci::Oid4vciTrait;
 use crate::services::oid4vp::Oid4vpTrait;
 use std::sync::Arc;
+use ymir::errors::Outcome;
 
 pub trait HasRepo {
     fn repo(&self) -> Arc<dyn RepoTrait>;
@@ -29,6 +30,7 @@ pub trait HasOid4Vci {
 }
 
 pub trait HasOid4Vp {
-    fn oid4vp(&self) -> Arc<dyn Oid4vpTrait>;
+    /// The OpenID4VP version that handles `uri`.
+    fn oid4vp(&self, uri: &str) -> Outcome<Arc<dyn Oid4vpTrait>>;
 }
 
