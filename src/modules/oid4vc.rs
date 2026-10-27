@@ -89,6 +89,12 @@ pub trait Oid4VcModule: HasRepo + HasOid4Vp + HasOid4Vci + Send + Sync + 'static
         self.oid4vp(uri)?.resolve_request(uri).await
     }
 
+    async fn vp_refuse(&self, uri: &str) -> Outcome<()> {
+        let oid4vp = self.oid4vp(uri)?;
+        let request = oid4vp.resolve_request(uri).await?;
+        oid4vp.refuse(&request, "access_denied", "The holder declined to present").await
+    }
+
     /// Presents to the verifier of `uri`, with the OpenID4VP version that handles it; when the
     /// wallet cannot (no credential matches, no holder DID or key), it tells the verifier so
     /// (`refuse`) before failing, so the verifier does not wait for a presentation.

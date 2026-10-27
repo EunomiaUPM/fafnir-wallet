@@ -55,6 +55,7 @@ impl Oid4vcRouter {
             .route("/vci/accept_offer", post(Self::vci_accept_offer))
             .route("/vp/resolve_request", post(Self::vp_resolve_request))
             .route("/vp/present", post(Self::vp_present))
+            .route("/vp/refuse", post(Self::vp_refuse))
             .with_state(self.core)
     }
 
@@ -98,6 +99,14 @@ impl Oid4vcRouter {
         Json(payload): Json<UriPayload>,
     ) -> AppResult<Json<PresentationRequest>> {
         Ok(Json(core.vp_resolve_request(&payload.uri).await?))
+    }
+
+    async fn vp_refuse(
+        State(core): State<Arc<dyn Oid4VcModule>>,
+        Json(payload): Json<UriPayload>,
+    ) -> AppResult<StatusCode> {
+        core.vp_refuse(&payload.uri).await?;
+        Ok(StatusCode::OK)
     }
 
     /// POST /vp/present  body: `{ "uri": "..." }`

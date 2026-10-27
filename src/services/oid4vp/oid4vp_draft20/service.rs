@@ -46,7 +46,9 @@ use ymir::utils::{ParseHeaderExt, ResponseExt, http_client, json_headers};
 
 use crate::services::oid4vp::{Oid4vpTrait, presented_vcs};
 use crate::utils::{normalize_host, parse_or_fail};
-use ymir::types::verification::{DefinitionSource, Draft20Request, PresentationRequest, Requested};
+use ymir::types::verification::{
+    DefinitionSource, Draft20Request, PresentationRequest, Requested, VerifierProof,
+};
 
 pub struct Oid4vpService {
     vault: Arc<VaultService>,
@@ -83,6 +85,7 @@ impl Oid4vpTrait for Oid4vpService {
             nonce: request.nonce,
             state: request.state,
             requested: Requested::Definition(definition),
+            verifier: VerifierProof::Unsigned,
         })
     }
 

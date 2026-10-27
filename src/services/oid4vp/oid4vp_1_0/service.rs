@@ -26,7 +26,7 @@ use tracing::{debug, warn};
 use uuid::Uuid;
 use ymir::capabilities::{Signer, Verifier};
 use ymir::data::entities::wallet::vc;
-use ymir::errors::{Errors, Outcome};
+use ymir::errors::{ErrorReason, Errors, Outcome};
 use ymir::services::client::ClientTrait;
 use ymir::services::vault::{VaultService, VaultTrait};
 use ymir::types::dids::Did;
@@ -44,7 +44,9 @@ use ymir::types::wallet::KeyRef;
 use ymir::utils::{ParseHeaderExt, ResponseExt, http_client};
 
 use crate::services::oid4vp::{presented_vcs, Oid4vpTrait};
-use ymir::types::verification::{AuthorizationRequest, PresentationRequest, RequestReference};
+use ymir::types::verification::{
+    AuthorizationRequest, PresentationRequest, RequestReference, UNTRUSTED_REQUEST, VerifierProof,
+};
 use crate::utils::normalize_host;
 
 pub struct Oid4vpService {
@@ -65,11 +67,13 @@ impl Oid4vpTrait for Oid4vpService {
     }
 
     async fn resolve_request(&self, uri: &str) -> Outcome<PresentationRequest> {
-        let request = match RequestReference::parse(uri)? {
-            Some(reference) => self.fetch_request_object(&reference).await?,
-            None => AuthorizationRequest::parse(uri)?,
+        let Some(reference) = RequestReference::parse(uri)? else {
+            return Ok(AuthorizationRequest::parse(uri)?.into());
         };
-        Ok(request.into())
+        let did = reference.did().to_string();
+        let mut request: PresentationRequest = self.fetch_request_object(&reference).await?.into();
+        request.verifier = VerifierProof::SignedBy { did };
+        Ok(request)
     }
 
     async fn present(
@@ -190,23 +194,19 @@ impl Oid4vpService {
 
         let request = Jwt::<RequestObjectPayload>::parse(resp.parse_text().await?.trim())?;
         // `verify_enveloped` checks the `typ` (oauth-authz-req+jwt) and the `aud`.
-        let request =
-            Verifier::verify_enveloped(request, Some(SELF_ISSUED_AUDIENCE.to_string())).await?;
-        if request.kid()?.did().id() != reference.did() {
-            return Err(Errors::security(
-                "The Request Object is not signed by the DID of its client_id",
-                None,
-            ));
+        let request = Verifier::verify_enveloped(request, Some(SELF_ISSUED_AUDIENCE.to_string()))
+            .await
+            .map_err(|e| untrusted(format!("Invalid Request Object signature: {}", e.reason())))?;
+        let kid = request.kid().map_err(|e| untrusted(e.reason().to_string()))?;
+        if kid.did().id() != reference.did() {
+            return Err(untrusted("The Request Object is not signed by the DID of its client_id"));
         }
         match request.claims().exp() {
             Some(exp) if exp >= Utc::now().timestamp() => {}
-            _ => return Err(Errors::security("The Request Object has expired", None)),
+            _ => return Err(untrusted("The Request Object has expired")),
         }
         if wallet_nonce.is_some() && request.body().wallet_nonce != wallet_nonce {
-            return Err(Errors::security(
-                "The Request Object does not echo the wallet_nonce",
-                None,
-            ));
+            return Err(untrusted("The Request Object does not echo the wallet_nonce"));
         }
 
         debug!("Request Object of {} verified", reference.client_id);
@@ -216,6 +216,14 @@ impl Oid4vpService {
 
 /// The claims of one presentation: the credentials, bound to the request by `aud` (the full
 /// Client Identifier, prefix included) and `nonce` (B.1.3.1.2).
+fn untrusted(message: impl Into<String>) -> Errors {
+    Errors::validation_with(vec![ErrorReason {
+        path: "request_object".to_string(),
+        code: UNTRUSTED_REQUEST,
+        message: message.into(),
+    }])
+}
+
 fn presentation_claims(
     request: &PresentationRequest,
     vcs: &[vc::Model],
