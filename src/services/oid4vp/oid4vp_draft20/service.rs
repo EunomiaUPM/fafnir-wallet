@@ -45,7 +45,7 @@ use ymir::types::wallet::KeyRef;
 use ymir::utils::{ParseHeaderExt, ResponseExt, http_client, json_headers};
 
 use crate::services::oid4vp::{Oid4vpTrait, presented_vcs};
-use crate::utils::{normalize_host, parse_or_fail};
+use crate::utils::{normalize_host, parse_or_fail, rejection_reason};
 use ymir::types::verification::{
     DefinitionSource, Draft20Request, PresentationRequest, Requested, VerifierProof,
 };
@@ -143,7 +143,11 @@ impl Oid4vpTrait for Oid4vpService {
             .post(&response_uri, Some(form_headers()?), HttpBody::form(&form)?)
             .await?;
         if !resp.status().is_success() {
-            return Err(Errors::forbidden("Verification failed", None));
+            let reason = rejection_reason(resp).await;
+            return Err(Errors::forbidden(
+                format!("Verification failed: {reason}"),
+                None,
+            ));
         }
         let body = resp.parse_text().await.unwrap_or_default();
         if body.trim().is_empty() {

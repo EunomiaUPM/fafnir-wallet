@@ -47,7 +47,7 @@ use crate::services::oid4vp::{presented_vcs, Oid4vpTrait};
 use ymir::types::verification::{
     AuthorizationRequest, PresentationRequest, RequestReference, UNTRUSTED_REQUEST, VerifierProof,
 };
-use crate::utils::normalize_host;
+use crate::utils::{normalize_host, rejection_reason};
 
 pub struct Oid4vpService {
     vault: Arc<VaultService>,
@@ -110,7 +110,11 @@ impl Oid4vpTrait for Oid4vpService {
             .post(&response_uri, Some(form_headers()?), HttpBody::form(&form)?)
             .await?;
         if !resp.status().is_success() {
-            return Err(Errors::forbidden("Verification failed", None));
+            let reason = rejection_reason(resp).await;
+            return Err(Errors::forbidden(
+                format!("Verification failed: {reason}"),
+                None,
+            ));
         }
 
         // §8.2: a JSON object, maybe with where to send the user next.

@@ -16,6 +16,7 @@
  */
 use reqwest::Response;
 use serde::de::DeserializeOwned;
+use serde_json::Value;
 use url::Url;
 use ymir::errors::{Errors, Outcome, PetitionFailure};
 use ymir::utils::ResponseExt;
@@ -56,4 +57,19 @@ pub async fn parse_or_fail<T: DeserializeOwned>(
             None,
         ))
     }
+}
+
+/// Why a verifier rejected a presentation: its `error_description` (OpenID4VP) or `details`.
+pub async fn rejection_reason(res: Response) -> String {
+    let status = res.status();
+    res.parse_text()
+        .await
+        .ok()
+        .and_then(|body| serde_json::from_str::<Value>(&body).ok())
+        .and_then(|body| {
+            ["error_description", "details"]
+                .into_iter()
+                .find_map(|key| body.get(key)?.as_str().map(str::to_string))
+        })
+        .unwrap_or_else(|| format!("the verifier answered {status}"))
 }

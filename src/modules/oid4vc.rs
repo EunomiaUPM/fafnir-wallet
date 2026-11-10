@@ -18,13 +18,14 @@
 use ymir::types::verification::{PresentationRequest, Requested};
 use crate::services::{HasOid4Vci, HasOid4Vp, HasRepo};
 use async_trait::async_trait;
-use tracing::warn;
+use tracing::{info, warn};
 use chrono::Utc;
 use ymir::data::entities::wallet::vc;
 use ymir::errors::{Errors, Outcome};
 use ymir::types::dids::Did;
 use ymir::types::issuance::VcBody;
 use ymir::types::issuance::VcCredOffer;
+use ymir::capabilities::{VcStatusCheck, Verifier};
 use ymir::types::jwt::Jwt;
 use ymir::types::vcs::VcPayload;
 use ymir::types::vcs::VPDef;
@@ -128,7 +129,8 @@ pub trait Oid4VcModule: HasRepo + HasOid4Vp + HasOid4Vci + Send + Sync + 'static
     }
 
     /// For each credential query, the stored credentials that answer it (same format, all the
-    /// types of one of its `type_values` sets, not expired): one, or all with `multiple`.
+    /// types of one of its `type_values` sets, not expired, nor revoked or suspended), newest
+    /// first: one, or all with `multiple`.
     async fn vp_select_dcql(&self, query: &DcqlQuery) -> Outcome<Vec<(String, Vec<vc::Model>)>> {
         if query.credential_sets.is_some() {
             return Err(Errors::not_impl(
@@ -137,47 +139,41 @@ pub trait Oid4VcModule: HasRepo + HasOid4Vp + HasOid4Vci + Send + Sync + 'static
             ));
         }
 
-        let stored = self.repo().vcs().get_all(None, None).await?;
+        let mut stored = self.repo().vcs().get_all(None, None).await?;
+        stored.sort_by(|a, b| b.added_on.cmp(&a.added_on));
         let now = Utc::now();
         let mut selected = Vec::new();
         for credential in &query.credentials {
-            let mut matching = stored
+            let matching: Vec<vc::Model> = stored
                 .iter()
                 .filter(|vc| answers(credential, vc) && vc.valid_until.map_or(true, |exp| now < exp))
-                .cloned();
-            let chosen: Vec<vc::Model> = if credential.multiple {
-                matching.collect()
-            } else {
-                matching.next().into_iter().collect()
-            };
-            if chosen.is_empty() {
-                return Err(Errors::missing_resource(
-                    "vc",
-                    format!("Missing vc that matches credential query '{}'", credential.id),
-                    None,
-                ));
-            }
+                .cloned()
+                .collect();
+            let what = format!("credential query '{}'", credential.id);
+            let chosen = usable(matching, credential.multiple, &what).await?;
             selected.push((credential.id.clone(), chosen));
         }
         Ok(selected)
     }
 
-    /// For each input descriptor, the first stored, unexpired credential that matches it.
+    /// For each input descriptor, the newest stored credential that matches it and is not
+    /// expired, revoked or suspended.
     async fn vp_select_definition(&self, vpd: &VPDef) -> Outcome<Vec<(String, Vec<vc::Model>)>> {
         let now = Utc::now();
         let mut selected = Vec::new();
         for desc in &vpd.input_descriptors {
-            let vc = self
+            let mut matching: Vec<vc::Model> = self
                 .repo()
                 .vcs()
                 .filter_by_desc(desc)
                 .await?
                 .into_iter()
-                .find(|vc| vc.valid_until.map_or(true, |exp| now < exp))
-                .ok_or_else(|| {
-                    Errors::missing_resource("vc", "Missing vc that matches input descriptor", None)
-                })?;
-            selected.push((desc.id.clone(), vec![vc]));
+                .filter(|vc| vc.valid_until.map_or(true, |exp| now < exp))
+                .collect();
+            matching.sort_by(|a, b| b.added_on.cmp(&a.added_on));
+            let what = format!("input descriptor '{}'", desc.id);
+            let chosen = usable(matching, false, &what).await?;
+            selected.push((desc.id.clone(), chosen));
         }
         Ok(selected)
     }
@@ -192,6 +188,46 @@ pub trait Oid4VcModule: HasRepo + HasOid4Vp + HasOid4Vci + Send + Sync + 'static
         let did = Did::parse(&first.holder_did)?;
         let did_model = self.repo().dids().get_by_did(did.id()).await?;
         Ok((did, did_model.default_key))
+    }
+}
+
+/// The credentials of `matching`, in order, that the issuer has not revoked or suspended: the
+/// first, or all of them with `multiple`.
+async fn usable(matching: Vec<vc::Model>, multiple: bool, what: &str) -> Outcome<Vec<vc::Model>> {
+    let found = matching.len();
+    let mut chosen = Vec::new();
+    for vc in matching {
+        if is_withdrawn(&vc).await {
+            info!("Skipping vc {}: its issuer revoked or suspended it", vc.id);
+            continue;
+        }
+        chosen.push(vc);
+        if !multiple {
+            break;
+        }
+    }
+    if chosen.is_empty() {
+        let reason = match found {
+            0 => format!("Missing vc that matches {what}"),
+            _ => format!("Every vc that matches {what} is revoked or suspended"),
+        };
+        return Err(Errors::missing_resource("vc", reason, None));
+    }
+    Ok(chosen)
+}
+
+/// Whether the issuer has revoked or suspended `vc`. One whose status cannot be told counts as
+/// usable: the verifier has the last word.
+async fn is_withdrawn(vc: &vc::Model) -> bool {
+    let VcBody::Jwt(token) = &vc.vc_body else {
+        return false;
+    };
+    let Ok(jwt) = Jwt::<VcPayload>::parse(token) else {
+        return false;
+    };
+    match Verifier::verify_enveloped(jwt, None).await {
+        Ok(verified) => VcStatusCheck::is_withdrawn(&verified).await,
+        Err(_) => false,
     }
 }
 
