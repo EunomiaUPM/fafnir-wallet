@@ -23,7 +23,7 @@ use ymir::errors::{BadFormat, Errors, Outcome};
 use ymir::services::vault::VaultTrait;
 use ymir::services::{HasIdentity, HasVault};
 use ymir::types::dids::{DidBuilder, DidDocument, DidType};
-use ymir::types::keys::PrivateKey;
+use ymir::types::keys::{Certificate, PrivateKey};
 use ymir::types::secrets::PemHelper;
 use ymir::types::wallet::KeyRef;
 
@@ -81,10 +81,14 @@ pub trait DidManagerModule: HasIdentity + HasVault + HasRepo + Send + Sync + 'st
             mapa.push((priv_key, frag));
         }
 
+        let first_frag = mapa.first().map(|(_, frag)| frag.clone());
         let mut did_document = DidDocument::base(&did, mapa);
         if let Some(services) = &entry.service {
             did_document.add_services(services.clone());
         };
+        if let (Some(pem), Some(frag)) = (&entry.cert, first_frag) {
+            did_document.add_cert(&frag, &Certificate::try_from_pem(pem)?);
+        }
 
         let is_first = self.repo().dids().get_all(None, None).await?.is_empty();
 
