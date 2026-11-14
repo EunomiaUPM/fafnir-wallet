@@ -140,6 +140,7 @@ pub trait Oid4VcModule: HasRepo + HasOid4Vp + HasOid4Vci + Send + Sync + 'static
         }
 
         let mut stored = self.repo().vcs().get_all(None, None).await?;
+        // TODO: with a label in the request, present the LegalPerson it lists, not the newest (plan row 24).
         stored.sort_by(|a, b| b.added_on.cmp(&a.added_on));
         let now = Utc::now();
         let mut selected = Vec::new();
@@ -178,16 +179,24 @@ pub trait Oid4VcModule: HasRepo + HasOid4Vp + HasOid4Vci + Send + Sync + 'static
         Ok(selected)
     }
 
-    /// The holder of the first selected credential, and its DID's default key.
+    /// The first of our DIDs among the selected credentials' subjects (numbers and labels have
+    /// their own `#cs` one), else the default DID; with its default key.
     async fn vp_holder(&self, selected: &[(String, Vec<vc::Model>)]) -> Outcome<(Did, KeyRef)> {
-        let first = selected
-            .iter()
-            .flat_map(|(_, vcs)| vcs.first())
-            .next()
-            .ok_or_else(|| Errors::missing_resource("vc", "The request asks for no credential", None))?;
-        let did = Did::parse(&first.holder_did)?;
-        let did_model = self.repo().dids().get_by_did(did.id()).await?;
-        Ok((did, did_model.default_key))
+        let mut subjects: Vec<String> = Vec::new();
+        for (_, vcs) in selected {
+            subjects.extend(vcs.iter().map(|vc| vc.holder_did.clone()));
+        }
+        if subjects.is_empty() {
+            return Err(Errors::missing_resource("vc", "The request asks for no credential", None));
+        }
+        for subject in &subjects {
+            let Ok(did) = Did::parse(subject) else { continue };
+            if let Ok(did_model) = self.repo().dids().get_by_did(did.id()).await {
+                return Ok((did, did_model.default_key));
+            }
+        }
+        let did_model = self.repo().dids().get_default().await?;
+        Ok((Did::parse(&did_model.did)?, did_model.default_key))
     }
 }
 

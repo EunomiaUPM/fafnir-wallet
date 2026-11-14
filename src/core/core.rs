@@ -17,7 +17,9 @@
 
 use super::OrchestratorTrait;
 use crate::config::CoreWalletConfig;
-use crate::modules::{DidManagerModule, KeyManagerModule, Oid4VcModule, VcManagerModule};
+use crate::modules::{
+    ComplianceModule, DidManagerModule, KeyManagerModule, Oid4VcModule, VcManagerModule,
+};
 use crate::services::oid4vci::Oid4vciTrait;
 use crate::services::oid4vp::Oid4vpTrait;
 use crate::services::repo::RepoTrait;
@@ -108,6 +110,12 @@ impl DidManagerModule for CoreWallet {}
 impl VcManagerModule for CoreWallet {}
 
 impl Oid4VcModule for CoreWallet {}
+
+impl ComplianceModule for CoreWallet {
+    fn is_docker(&self) -> bool {
+        self.config.is_docker()
+    }
+}
 
 impl OrchestratorTrait for CoreWallet {
     fn config(&self) -> &CoreWalletConfig {

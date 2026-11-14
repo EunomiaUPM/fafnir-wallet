@@ -197,6 +197,19 @@ What `FafnirService` calls in ymir:
 | POST   | `/oid4vci`  | `{ "uri": "..." }`    | 200 (VC stored)                |
 | POST   | `/oid4vp`   | `{ "uri": "..." }`    | 200 + optional `redirect_uri`  |
 
+### Compliance
+
+Gaia-X compliance by plain POST (Loire's compliance API, Danube extensions): one presentation with
+the newest usable credential of each type, signed by the wallet's DID, without `aud` nor `nonce`.
+
+| Method | Path                   | Body                                  | Response                |
+|--------|------------------------|---------------------------------------|-------------------------|
+| POST   | `/compliance/request`  | `{ "url", "vcid"?, "types": [...] }`  | `VcEntry` 201 (stored)  |
+
+The wallet POSTs `application/vp+jwt` to `url?vcid=…` (`Accept: application/vc+jwt`), checks the
+signature of the credential it gets back and stores it; a refusal comes back as 403 with the
+service's reason.
+
 ### OID4VC (stepwise)
 
 For consumers that want to show the offer / VP request / matching before

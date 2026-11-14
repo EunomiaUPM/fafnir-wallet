@@ -15,12 +15,14 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+mod compliance;
 mod core;
 mod did_manager;
 mod key_manager;
 mod oid4vc;
 mod vc_manager;
 
+pub use compliance::ComplianceModule;
 pub use core::CoreTrait;
 pub use did_manager::DidManagerModule;
 pub use key_manager::KeyManagerModule;

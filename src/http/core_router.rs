@@ -27,8 +27,10 @@ use tracing::{Level, error, info};
 use uuid::Uuid;
 use ymir::http::HealthRouter;
 use crate::core::CoreWallet;
-use crate::http::{DidRouter, KeyRouter, Oid4vcRouter, VcsRouter};
-use crate::modules::{DidManagerModule, KeyManagerModule, Oid4VcModule, VcManagerModule};
+use crate::http::{ComplianceRouter, DidRouter, KeyRouter, Oid4vcRouter, VcsRouter};
+use crate::modules::{
+    ComplianceModule, DidManagerModule, KeyManagerModule, Oid4VcModule, VcManagerModule,
+};
 
 pub struct WalletRouter {
     core: Arc<CoreWallet>,
@@ -44,11 +46,13 @@ impl WalletRouter {
         let keys_core: Arc<dyn KeyManagerModule> = self.core.clone();
         let vcs_core: Arc<dyn VcManagerModule> = self.core.clone();
         let oid4vc_core: Arc<dyn Oid4VcModule> = self.core.clone();
+        let compliance_core: Arc<dyn ComplianceModule> = self.core.clone();
 
         let dids = DidRouter::new(dids_core).router();
         let keys = KeyRouter::new(keys_core).router();
         let vcs = VcsRouter::new(vcs_core).router();
         let oid4vc = Oid4vcRouter::new(oid4vc_core).router();
+        let compliance = ComplianceRouter::new(compliance_core).router();
         let health = HealthRouter::new();
 
         Router::new()
@@ -57,6 +61,7 @@ impl WalletRouter {
             .nest("/keys", keys)
             .nest("/vcs", vcs)
             .merge(oid4vc)
+            .nest("/compliance", compliance)
             .fallback(Self::fallback)
             .layer(
                 TraceLayer::new_for_http()

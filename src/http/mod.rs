@@ -15,12 +15,14 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+mod compliance;
 mod core_router;
 mod did;
 mod key;
 mod oid4vc;
 mod vcs;
 
+pub use compliance::ComplianceRouter;
 pub use core_router::WalletRouter;
 pub use did::DidRouter;
 pub use key::KeyRouter;
