@@ -30,6 +30,6 @@ clap = { version = "4.4.9", features = [
 async-trait = "0.1.89"
 serde_norway = "0.9.42"
 uuid = { version = "1.23.1", features = ["v4"] }
-ymir = { git = "https://github.com/EunomiaUPM/ymir.git", rev = "dc6fc84ca187b54368753474c83073cb2d7d1b34" }
+ymir = { git = "https://github.com/EunomiaUPM/ymir.git", rev = "6ce483da5be0d008f1e6b00dca21bf5c05a11aa8" }
 #ymir = {git = "https://github.com/EunomiaUPM/ymir.git", tag = "v0.8.4"}
 #ymir = { path = "../ymir/crates/ymir" }

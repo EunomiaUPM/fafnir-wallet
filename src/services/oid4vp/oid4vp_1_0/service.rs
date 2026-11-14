@@ -41,7 +41,7 @@ use ymir::types::verification::request_object::{
 };
 use ymir::types::verification::{DirectPostResponse, RequestObjectPayload};
 use ymir::types::wallet::KeyRef;
-use ymir::utils::{ParseHeaderExt, ResponseExt, http_client};
+use ymir::utils::{ParseHeaderExt, ResponseExt, http_client, protocol_client};
 
 use crate::services::oid4vp::{presented_vcs, Oid4vpTrait};
 use ymir::types::verification::{
@@ -106,7 +106,8 @@ impl Oid4vpTrait for Oid4vpService {
         }
 
         let response_uri = normalize_host(&request.response_uri, self.is_docker);
-        let resp = http_client()
+        // The verifier may run its checks before answering (a Dispatcher calls its engine).
+        let resp = protocol_client()
             .post(&response_uri, Some(form_headers()?), HttpBody::form(&form)?)
             .await?;
         if !resp.status().is_success() {

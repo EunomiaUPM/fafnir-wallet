@@ -39,7 +39,7 @@ use ymir::types::keys::{PrivateKey, SigningCtx};
 use ymir::types::secrets::PemHelper;
 use ymir::types::vcs::VcTypeConfig;
 use ymir::types::wallet::Identity;
-use ymir::utils::{ParseHeaderExt, get_query_param, http_client, json_headers};
+use ymir::utils::{ParseHeaderExt, get_query_param, http_client, json_headers, protocol_client};
 
 use crate::services::oid4vci::Oid4vciTrait;
 use crate::utils::{normalize_host, parse_or_fail};
@@ -273,7 +273,8 @@ impl Oid4vciService {
             format!("Bearer {}", access_token).parse_header()?,
         );
         let credential_endpoint = normalize_host(credential_endpoint, self.is_docker);
-        let res = http_client()
+        // An issuer may check compliance before answering (a Dispatcher calls its engine).
+        let res = protocol_client()
             .post(&credential_endpoint, Some(headers), HttpBody::json(&req)?)
             .await?;
 

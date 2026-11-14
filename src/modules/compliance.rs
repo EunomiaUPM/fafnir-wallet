@@ -18,9 +18,6 @@
 use async_trait::async_trait;
 use axum::http::HeaderMap;
 use axum::http::header::{ACCEPT, CONTENT_TYPE};
-use std::sync::LazyLock;
-use std::time::Duration as StdDuration;
-
 use chrono::{Duration, Utc};
 use serde_json::Value;
 use tracing::info;
@@ -40,21 +37,11 @@ use ymir::types::vcs::VcPayload;
 use ymir::types::verification::{DcqlQuery, Requested};
 use ymir::types::vps::VpJwtClaimsBuilder;
 use ymir::types::wallet::ComplianceRequest;
-use ymir::services::client::ClientService;
-use ymir::utils::{ParseHeaderExt, ResponseExt};
+use ymir::utils::{ParseHeaderExt, ResponseExt, protocol_client};
 
 use crate::modules::{Oid4VcModule, VcManagerModule};
 use crate::services::oid4vp::presented_vcs;
 use crate::utils::normalize_host;
-
-/// A compliance service resolves DIDs and chains and checks shapes before answering (Loire
-/// takes ~20 s), beyond the 10 s of the shared client.
-static COMPLIANCE_CLIENT: LazyLock<ClientService> = LazyLock::new(|| {
-    ClientService::builder()
-        .timeout(Some(StdDuration::from_secs(60)))
-        .deadline(StdDuration::from_secs(60))
-        .build()
-});
 
 /// Gaia-X compliance by plain POST: one presentation with every credential, and the credential
 /// the service answers, stored (flow of the Loire compliance API and of Danube extensions).
@@ -96,7 +83,8 @@ pub trait ComplianceModule: Oid4VcModule + VcManagerModule + HasVault + Send + S
         let mut headers = HeaderMap::new();
         headers.insert(CONTENT_TYPE, "application/vp+jwt".parse_header()?);
         headers.insert(ACCEPT, "application/vc+jwt".parse_header()?);
-        let res = COMPLIANCE_CLIENT
+        // The service resolves DIDs and chains and checks shapes first: Loire takes ~20 s.
+        let res = protocol_client()
             .post(&url, Some(headers), HttpBody::Raw(vp.as_str().to_string()))
             .await?;
         let status = res.status();
