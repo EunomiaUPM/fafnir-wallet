@@ -34,7 +34,7 @@ use ymir::types::jwt::Jwt;
 use ymir::types::keys::{PrivateKey, SigningCtx};
 use ymir::types::secrets::PemHelper;
 use ymir::types::vcs::VcPayload;
-use ymir::types::verification::{DcqlQuery, Requested};
+use ymir::types::verification::{CredentialQuery, DcqlQuery, Requested};
 use ymir::types::vps::VpJwtClaimsBuilder;
 use ymir::types::wallet::ComplianceRequest;
 use ymir::utils::{ParseHeaderExt, ResponseExt, protocol_client};
@@ -51,7 +51,10 @@ pub trait ComplianceModule: Oid4VcModule + VcManagerModule + HasVault + Send + S
     fn is_docker(&self) -> bool;
 
     async fn request_compliance(&self, request: &ComplianceRequest) -> Outcome<vc::Model> {
-        let query = DcqlQuery::for_types(&request.types);
+        let query = DcqlQuery {
+            credentials: request.types.iter().map(CredentialQuery::for_type).collect(),
+            credential_sets: None,
+        };
         let (selected, did, key_ref) = self.vp_select(&Requested::Dcql(query)).await?;
         let vcs: Vec<vc::Model> = selected.into_iter().flat_map(|(_, vcs)| vcs).collect();
         let (jwts, version) = presented_vcs(&vcs)?;

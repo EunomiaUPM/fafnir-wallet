@@ -5296,7 +5296,7 @@ checksum = "cfe53a6657fd280eaa890a3bc59152892ffa3e30101319d168b781ed6529b049"
 [[package]]
 name = "ymir"
 version = "0.8.0"
-source = "git+https://github.com/EunomiaUPM/ymir.git?rev=6ce483da5be0d008f1e6b00dca21bf5c05a11aa8#6ce483da5be0d008f1e6b00dca21bf5c05a11aa8"
+source = "git+https://github.com/EunomiaUPM/ymir.git?rev=b3c74e4dbbe7dbeeaf8dbdb8d82cc3081c4a8250#b3c74e4dbbe7dbeeaf8dbdb8d82cc3081c4a8250"
 dependencies = [
  "arc-swap",
  "async-trait",

@@ -29,6 +29,7 @@ use ymir::types::issuance::VcCredOffer;
 
 use crate::modules::Oid4VcModule;
 use ymir::types::verification::PresentationRequest;
+use ymir::types::wallet::{PresentRequest, PresentationPreview};
 
 /// Body de los endpoints que reciben una URI OIDC opaca.
 #[derive(Debug, Deserialize)]
@@ -54,6 +55,7 @@ impl Oid4vcRouter {
             .route("/vci/resolve_offer", post(Self::vci_resolve_offer))
             .route("/vci/accept_offer", post(Self::vci_accept_offer))
             .route("/vp/resolve_request", post(Self::vp_resolve_request))
+            .route("/vp/preview", post(Self::vp_preview))
             .route("/vp/present", post(Self::vp_present))
             .route("/vp/refuse", post(Self::vp_refuse))
             .with_state(self.core)
@@ -109,14 +111,23 @@ impl Oid4vcRouter {
         Ok(StatusCode::OK)
     }
 
-    /// POST /vp/present  body: `{ "uri": "..." }`
-    /// Resuelve la request, matchea, firma y envía la VP. Devuelve la
+    /// POST /vp/preview  body: `{ "uri": "..." }`
+    /// What the wallet holds for the request and what it presents by default.
+    async fn vp_preview(
+        State(core): State<Arc<dyn Oid4VcModule>>,
+        Json(payload): Json<UriPayload>,
+    ) -> AppResult<Json<PresentationPreview>> {
+        Ok(Json(core.vp_preview(&payload.uri).await?))
+    }
+
+    /// POST /vp/present  body: `{ "uri": "...", "choice"?: { query id: [vc id] } }`
+    /// Resuelve la request, matchea (o toma lo elegido), firma y envía la VP. Devuelve la
     /// redirect URI si la hay (200 con string JSON) o 200 vacío.
     async fn vp_present(
         State(core): State<Arc<dyn Oid4VcModule>>,
-        Json(payload): Json<UriPayload>,
+        Json(payload): Json<PresentRequest>,
     ) -> AppResult {
-        let res = core.vp_present(&payload.uri).await?;
+        let res = core.vp_present(&payload.uri, payload.choice.as_ref()).await?;
         Ok(match res {
             Some(url) => Json(url).into_response(),
             None => StatusCode::OK.into_response(),
